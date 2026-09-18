@@ -9,8 +9,615 @@
     <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
     <style>
-        :root{--ink:#172033;--muted:#7e889d;--line:#e8ebf2;--surface:#fff;--canvas:#f5f7fb;--navy:#1c2742;--blue:#3977f6;--blue-soft:#edf3ff;--green:#16a37a;--orange:#f59e0b;--red:#e45f68;--shadow:0 16px 40px rgba(35,49,85,.08)}*{box-sizing:border-box}body{margin:0;background:var(--canvas);color:var(--ink);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}a{color:inherit;text-decoration:none}a:hover{text-decoration:none}.app-shell{min-height:100vh;display:flex}.sidebar{width:260px;flex:0 0 260px;min-height:100vh;background:var(--navy);color:#aeb9d0;padding:22px 14px;position:fixed;z-index:20;left:0;top:0;bottom:0;transition:transform .25s ease}.brand{height:58px;display:flex;align-items:center;padding:0 14px;margin-bottom:30px}.brand img{width:39px;height:39px;object-fit:contain;margin-right:11px;background:#fff;border-radius:11px;padding:5px}.brand strong{color:#fff;font-size:17px;display:block;line-height:1.1}.brand small{color:#8492b0;font-size:10px;letter-spacing:1.3px;text-transform:uppercase}.menu-label{padding:0 14px;color:#6f7e9f;font-size:10px;text-transform:uppercase;letter-spacing:1.3px;margin:19px 0 9px;font-weight:700}.nav-list{list-style:none;padding:0;margin:0}.nav-list li{margin:3px 0}.nav-list>li>a,.nav-list .submenu a{display:flex;align-items:center;min-height:45px;border-radius:10px;padding:0 14px;transition:all .2s}.nav-list>li>a:hover,.nav-list .submenu a:hover{background:rgba(255,255,255,.07);color:#fff}.nav-list>li>a i{width:27px;color:#8493b2;font-size:16px}.nav-list>li.active>a{background:linear-gradient(90deg,rgba(57,119,246,.25),rgba(57,119,246,.08));color:#fff;box-shadow:inset 3px 0 var(--blue)}.nav-list>li.active>a i{color:#73a0ff}.chevron{margin-left:auto!important;width:auto!important;font-size:11px!important;color:#7483a2!important}.submenu{list-style:none;margin:2px 0 7px 27px;padding:0 0 0 12px;border-left:1px solid #34415e}.submenu a{min-height:35px!important;font-size:12px;padding:0 10px!important}.sidebar-bottom{position:absolute;left:14px;right:14px;bottom:20px;border-top:1px solid rgba(255,255,255,.08);padding:17px 12px 0;color:#8492b0;font-size:11px}.sidebar-bottom i{color:#63c99f;margin-right:7px}.main{margin-left:260px;width:calc(100% - 260px);min-width:0}.topbar{height:76px;background:rgba(255,255,255,.92);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 4.2%;position:sticky;top:0;z-index:10;backdrop-filter:blur(14px)}.mobile-toggle{border:0;background:transparent;color:var(--ink);font-size:21px;display:none}.crumbs{color:var(--muted);font-size:13px}.crumbs i{margin:0 10px;font-size:10px}.crumbs strong{color:var(--ink);font-weight:600}.top-actions{display:flex;align-items:center;gap:19px}.icon-btn{position:relative;color:#77839a;font-size:18px}.notification{position:absolute;width:7px;height:7px;border-radius:50%;background:var(--red);top:0;right:-3px;border:2px solid #fff;box-sizing:content-box}.profile{display:flex;align-items:center;gap:10px;border-left:1px solid var(--line);padding-left:18px}.profile img{width:35px;height:35px;border-radius:50%;object-fit:cover;background:#e9eef9}.profile-name{font-size:13px;font-weight:600;color:var(--ink)}.profile-role{display:block;color:var(--muted);font-size:11px;margin-top:2px}.page{padding:38px 4.2% 32px;max-width:1200px}.page-heading{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:27px}.eyebrow{color:var(--blue);font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 9px}h1{font-size:28px;margin:0;letter-spacing:-.7px;font-weight:750}.subtitle{margin:8px 0 0;color:var(--muted);font-size:14px}.back-link{color:var(--muted);font-size:13px;padding-top:8px}.back-link i{margin-right:6px}.form-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:29px 32px}.form-intro{display:flex;align-items:flex-start;gap:14px;border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:24px}.intro-icon{width:43px;height:43px;border-radius:12px;background:var(--blue-soft);color:var(--blue);display:grid;place-items:center;font-size:19px;flex:0 0 43px}.form-intro h2{font-size:17px;margin:0 0 5px;font-weight:700}.form-intro p{color:var(--muted);font-size:12px;margin:0}.alert{border:0;border-radius:11px;padding:13px 16px;margin-bottom:18px;font-size:12px}.alert-danger{background:#fff0f1;color:#a23e4b}.alert-success{background:#e9faf4;color:#14795d}.fields{display:grid;grid-template-columns:1fr 1fr;gap:20px 18px}.field.full{grid-column:1/-1}.field-label{display:block;color:#46526b;font-size:11px;font-weight:750;margin:0 0 8px}.required{color:var(--red)}.control{width:100%;height:48px;border:1px solid #dfe4ee;border-radius:9px;color:var(--ink);background:#fbfcfe;padding:0 14px;outline:none;font-size:13px}.control:focus{border-color:#7ea5fc;box-shadow:0 0 0 4px rgba(57,119,246,.1);background:#fff}.type-box{grid-column:1/-1;background:#f8f9fc;border:1px solid var(--line);border-radius:11px;padding:16px 17px}.type-box p{margin:0 0 12px;color:#46526b;font-size:11px;font-weight:750}.type-options{display:flex;gap:12px}.type-option{position:relative;display:flex;align-items:center;gap:8px;border:1px solid #dfe4ee;background:#fff;border-radius:8px;padding:10px 13px;color:#536078;font-size:12px;cursor:pointer}.type-option input{accent-color:var(--blue)}.type-option:hover{border-color:#9bb8fa}.form-actions{display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--line);padding-top:22px;margin-top:25px}.btn{border:0;border-radius:8px;min-height:41px;padding:0 16px;font-size:11px;font-weight:700}.btn-primary{background:var(--blue);color:#fff;box-shadow:0 7px 15px rgba(57,119,246,.2)}.btn-light{background:#f1f3f7;color:#66728a}.footer{color:#a2aabd;font-size:11px;text-align:center;padding:32px 0 4px}.modal-content{border:0;border-radius:16px;box-shadow:var(--shadow)}.modal-header,.modal-footer{border-color:var(--line);padding:18px 22px}.modal-title{font-size:17px;font-weight:700}.modal-body{padding:22px}.modal .close{font-size:24px;font-weight:400;color:#9ba5b8}.check-row{display:flex;gap:25px;margin-top:14px}.check-row label{font-weight:500;font-size:12px;color:#46526b}
-        @media(max-width:780px){.sidebar{transform:translateX(-100%);box-shadow:10px 0 30px rgba(0,0,0,.15)}.sidebar.open{transform:translateX(0)}.main{margin-left:0;width:100%}.mobile-toggle{display:block;margin-right:14px}.topbar{padding:0 20px}.crumbs{display:none}.page{padding:28px 18px}.page-heading{display:block}.back-link{display:inline-block;margin-top:16px}.form-card{padding:22px 18px}}@media(max-width:560px){h1{font-size:24px}.profile-name,.profile-role{display:none}.profile{padding-left:10px}.fields{grid-template-columns:1fr}.field.full,.type-box{grid-column:auto}.type-options{display:grid;grid-template-columns:1fr 1fr}.form-actions{display:grid}.form-actions .btn{width:100%}}
+        :root {
+            --ink: #172033;
+            --muted: #7e889d;
+            --line: #e8ebf2;
+            --surface: #fff;
+            --canvas: #f5f7fb;
+            --navy: #1c2742;
+            --blue: #3977f6;
+            --blue-soft: #edf3ff;
+            --green: #16a37a;
+            --orange: #f59e0b;
+            --red: #e45f68;
+            --shadow: 0 16px 40px rgba(35, 49, 85, .08)
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--canvas);
+            color: var(--ink);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none
+        }
+
+        a:hover {
+            text-decoration: none
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            display: flex
+        }
+
+        .sidebar {
+            width: 260px;
+            flex: 0 0 260px;
+            min-height: 100vh;
+            background: var(--navy);
+            color: #aeb9d0;
+            padding: 22px 14px;
+            position: fixed;
+            z-index: 20;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            transition: transform .25s ease
+        }
+
+        .brand {
+            height: 58px;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            margin-bottom: 30px
+        }
+
+        .brand img {
+            width: 39px;
+            height: 39px;
+            object-fit: contain;
+            margin-right: 11px;
+            background: #fff;
+            border-radius: 11px;
+            padding: 5px
+        }
+
+        .brand strong {
+            color: #fff;
+            font-size: 17px;
+            display: block;
+            line-height: 1.1
+        }
+
+        .brand small {
+            color: #8492b0;
+            font-size: 10px;
+            letter-spacing: 1.3px;
+            text-transform: uppercase
+        }
+
+        .menu-label {
+            padding: 0 14px;
+            color: #6f7e9f;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.3px;
+            margin: 19px 0 9px;
+            font-weight: 700
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0
+        }
+
+        .nav-list li {
+            margin: 3px 0
+        }
+
+        .nav-list > li > a, .nav-list .submenu a {
+            display: flex;
+            align-items: center;
+            min-height: 45px;
+            border-radius: 10px;
+            padding: 0 14px;
+            transition: all .2s
+        }
+
+        .nav-list > li > a:hover, .nav-list .submenu a:hover {
+            background: rgba(255, 255, 255, .07);
+            color: #fff
+        }
+
+        .nav-list > li > a i {
+            width: 27px;
+            color: #8493b2;
+            font-size: 16px
+        }
+
+        .nav-list > li.active > a {
+            background: linear-gradient(90deg, rgba(57, 119, 246, .25), rgba(57, 119, 246, .08));
+            color: #fff;
+            box-shadow: inset 3px 0 var(--blue)
+        }
+
+        .nav-list > li.active > a i {
+            color: #73a0ff
+        }
+
+        .chevron {
+            margin-left: auto !important;
+            width: auto !important;
+            font-size: 11px !important;
+            color: #7483a2 !important
+        }
+
+        .submenu {
+            list-style: none;
+            margin: 2px 0 7px 27px;
+            padding: 0 0 0 12px;
+            border-left: 1px solid #34415e
+        }
+
+        .submenu a {
+            min-height: 35px !important;
+            font-size: 12px;
+            padding: 0 10px !important
+        }
+
+        .sidebar-bottom {
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: 20px;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            padding: 17px 12px 0;
+            color: #8492b0;
+            font-size: 11px
+        }
+
+        .sidebar-bottom i {
+            color: #63c99f;
+            margin-right: 7px
+        }
+
+        .main {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            min-width: 0
+        }
+
+        .topbar {
+            height: 76px;
+            background: rgba(255, 255, 255, .92);
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4.2%;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(14px)
+        }
+
+        .mobile-toggle {
+            border: 0;
+            background: transparent;
+            color: var(--ink);
+            font-size: 21px;
+            display: none
+        }
+
+        .crumbs {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .crumbs i {
+            margin: 0 10px;
+            font-size: 10px
+        }
+
+        .crumbs strong {
+            color: var(--ink);
+            font-weight: 600
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 19px
+        }
+
+        .icon-btn {
+            position: relative;
+            color: #77839a;
+            font-size: 18px
+        }
+
+        .notification {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--red);
+            top: 0;
+            right: -3px;
+            border: 2px solid #fff;
+            box-sizing: content-box
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 1px solid var(--line);
+            padding-left: 18px
+        }
+
+        .profile img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #e9eef9
+        }
+
+        .profile-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink)
+        }
+
+        .profile-role {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 2px
+        }
+
+        .page {
+            padding: 38px 4.2% 32px;
+            max-width: 1200px
+        }
+
+        .page-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 27px
+        }
+
+        .eyebrow {
+            color: var(--blue);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 0 0 9px
+        }
+
+        h1 {
+            font-size: 28px;
+            margin: 0;
+            letter-spacing: -.7px;
+            font-weight: 750
+        }
+
+        .subtitle {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 14px
+        }
+
+        .back-link {
+            color: var(--muted);
+            font-size: 13px;
+            padding-top: 8px
+        }
+
+        .back-link i {
+            margin-right: 6px
+        }
+
+        .form-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 29px 32px
+        }
+
+        .form-intro {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 22px;
+            margin-bottom: 24px
+        }
+
+        .intro-icon {
+            width: 43px;
+            height: 43px;
+            border-radius: 12px;
+            background: var(--blue-soft);
+            color: var(--blue);
+            display: grid;
+            place-items: center;
+            font-size: 19px;
+            flex: 0 0 43px
+        }
+
+        .form-intro h2 {
+            font-size: 17px;
+            margin: 0 0 5px;
+            font-weight: 700
+        }
+
+        .form-intro p {
+            color: var(--muted);
+            font-size: 12px;
+            margin: 0
+        }
+
+        .alert {
+            border: 0;
+            border-radius: 11px;
+            padding: 13px 16px;
+            margin-bottom: 18px;
+            font-size: 12px
+        }
+
+        .alert-danger {
+            background: #fff0f1;
+            color: #a23e4b
+        }
+
+        .alert-success {
+            background: #e9faf4;
+            color: #14795d
+        }
+
+        .fields {
+            display: grid;
+            grid-template-columns:1fr 1fr;
+            gap: 20px 18px
+        }
+
+        .field.full {
+            grid-column: 1/-1
+        }
+
+        .field-label {
+            display: block;
+            color: #46526b;
+            font-size: 11px;
+            font-weight: 750;
+            margin: 0 0 8px
+        }
+
+        .required {
+            color: var(--red)
+        }
+
+        .control {
+            width: 100%;
+            height: 48px;
+            border: 1px solid #dfe4ee;
+            border-radius: 9px;
+            color: var(--ink);
+            background: #fbfcfe;
+            padding: 0 14px;
+            outline: none;
+            font-size: 13px
+        }
+
+        .control:focus {
+            border-color: #7ea5fc;
+            box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
+            background: #fff
+        }
+
+        .type-box {
+            grid-column: 1/-1;
+            background: #f8f9fc;
+            border: 1px solid var(--line);
+            border-radius: 11px;
+            padding: 16px 17px
+        }
+
+        .type-box p {
+            margin: 0 0 12px;
+            color: #46526b;
+            font-size: 11px;
+            font-weight: 750
+        }
+
+        .type-options {
+            display: flex;
+            gap: 12px
+        }
+
+        .type-option {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid #dfe4ee;
+            background: #fff;
+            border-radius: 8px;
+            padding: 10px 13px;
+            color: #536078;
+            font-size: 12px;
+            cursor: pointer
+        }
+
+        .type-option input {
+            accent-color: var(--blue)
+        }
+
+        .type-option:hover {
+            border-color: #9bb8fa
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 1px solid var(--line);
+            padding-top: 22px;
+            margin-top: 25px
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 8px;
+            min-height: 41px;
+            padding: 0 16px;
+            font-size: 11px;
+            font-weight: 700
+        }
+
+        .btn-primary {
+            background: var(--blue);
+            color: #fff;
+            box-shadow: 0 7px 15px rgba(57, 119, 246, .2)
+        }
+
+        .btn-light {
+            background: #f1f3f7;
+            color: #66728a
+        }
+
+        .footer {
+            color: #a2aabd;
+            font-size: 11px;
+            text-align: center;
+            padding: 32px 0 4px
+        }
+
+        .modal-content {
+            border: 0;
+            border-radius: 16px;
+            box-shadow: var(--shadow)
+        }
+
+        .modal-header, .modal-footer {
+            border-color: var(--line);
+            padding: 18px 22px
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 700
+        }
+
+        .modal-body {
+            padding: 22px
+        }
+
+        .modal .close {
+            font-size: 24px;
+            font-weight: 400;
+            color: #9ba5b8
+        }
+
+        .check-row {
+            display: flex;
+            gap: 25px;
+            margin-top: 14px
+        }
+
+        .check-row label {
+            font-weight: 500;
+            font-size: 12px;
+            color: #46526b
+        }
+
+        @media (max-width: 780px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 10px 0 30px rgba(0, 0, 0, .15)
+            }
+
+            .sidebar.open {
+                transform: translateX(0)
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%
+            }
+
+            .mobile-toggle {
+                display: block;
+                margin-right: 14px
+            }
+
+            .topbar {
+                padding: 0 20px
+            }
+
+            .crumbs {
+                display: none
+            }
+
+            .page {
+                padding: 28px 18px
+            }
+
+            .page-heading {
+                display: block
+            }
+
+            .back-link {
+                display: inline-block;
+                margin-top: 16px
+            }
+
+            .form-card {
+                padding: 22px 18px
+            }
+        }
+
+        @media (max-width: 560px) {
+            h1 {
+                font-size: 24px
+            }
+
+            .profile-name, .profile-role {
+                display: none
+            }
+
+            .profile {
+                padding-left: 10px
+            }
+
+            .fields {
+                grid-template-columns:1fr
+            }
+
+            .field.full, .type-box {
+                grid-column: auto
+            }
+
+            .type-options {
+                display: grid;
+                grid-template-columns:1fr 1fr
+            }
+
+            .form-actions {
+                display: grid
+            }
+
+            .form-actions .btn {
+                width: 100%
+            }
+        }
     </style>
 
     <!-- PWA -->
@@ -26,12 +633,199 @@
           th:href="@{/icons/icon-192.png}">
 </head>
 <body>
-<div class="app-shell"><aside class="sidebar" id="sidebar"><div class="brand"><a th:href="@{/gharnata/}"><img src="/assets/images/logo/logo_icon.png" alt="Gharnata"></a><div><strong>Gharnata</strong><small>Gestion de stock</small></div></div><div class="menu-label">Espace de travail</div><ul class="nav-list"><li><a href="#products" data-toggle="collapse" aria-expanded="false"><i class="fa fa-cubes"></i><span>Produits</span><i class="fa fa-angle-down chevron"></i></a><ul class="submenu collapse" id="products"><li><a th:href="@{/gharnata/show-products}"><span>Vue d'ensemble</span></a></li><li><a th:href="@{/gharnata/add-product}"><span>Ajouter un produit</span></a></li><li><a th:href="@{/gharnata/modify-product}"><span>Modifier un produit</span></a></li></ul></li><li><a th:href="@{/gharnata/show-commands}"><i class="fa fa-archive"></i><span>Commandes</span></a></li><li class="active"><a th:href="@{/gharnata/list-clients}"><i class="fa fa-users"></i><span>Clients</span></a></li><li><a th:href="@{/gharnata/pass-mass}"><i class="fa fa-bolt"></i><span>Produits en masse</span></a></li><li><a th:href="@{/gharnata/sim-fac}"><i class="fa fa-file-text-o"></i><span>Simuler une facture</span></a></li></ul><div class="menu-label">Outils</div><ul class="nav-list"><li><a href="#operations" data-toggle="collapse" aria-expanded="false"><i class="fa fa-diamond"></i><span>Opérations</span><i class="fa fa-angle-down chevron"></i></a><ul class="submenu collapse" id="operations"><li><a href="#" data-toggle="modal" data-target="#addCat"><span>Ajouter une catégorie</span></a></li><li><a href="#" data-toggle="modal" data-target="#loadProds"><span>Télécharger les produits</span></a></li><li><a th:href="@{/gharnata/show-products-stock}"><span>État du stock</span></a></li></ul></li></ul><div class="sidebar-bottom"><i class="fa fa-circle"></i> Système opérationnel</div></aside>
-    <main class="main"><header class="topbar"><div class="d-flex align-items-center"><button class="mobile-toggle" type="button" id="sidebarToggle" aria-label="Ouvrir le menu"><i class="fa fa-bars"></i></button><div class="crumbs"><span>Clients</span><i class="fa fa-angle-right"></i><strong>Ajouter un client</strong></div></div><div class="top-actions"><a class="icon-btn" th:href="@{/gharnata/notif-stock}" aria-label="Notifications"><i class="fa fa-bell-o"></i><span th:if="${notif != 0}" class="notification"></span></a><div class="profile"><img src="/images/profile.png" alt="Photo de profil"><div><span class="profile-name" th:text="${#authentication.name}">Administrateur</span><span class="profile-role">Administrateur</span></div><a th:href="@{/logout}" class="text-muted ml-2" aria-label="Se déconnecter"><i class="fa fa-sign-out"></i></a></div></div></header>
-        <section class="page"><div class="page-heading"><div><p class="eyebrow">Gestion de la clientèle</p><h1>Ajouter un client</h1><p class="subtitle">Créez une fiche client pour gérer ses commandes et ses paiements.</p></div><a class="back-link" th:href="@{/gharnata/list-clients}"><i class="fa fa-arrow-left"></i> Retour aux clients</a></div><div class="form-card"><div class="form-intro"><div class="intro-icon"><i class="fa fa-user-plus"></i></div><div><h2>Informations du client</h2><p>Les champs marqués d’un astérisque sont obligatoires.</p></div></div><div th:if="${error}" class="alert alert-danger" role="alert"><i class="fa fa-exclamation-circle mr-2"></i><span th:text="${error}"></span></div><div th:if="${success}" class="alert alert-success" role="alert"><i class="fa fa-check-circle mr-2"></i><span th:text="${success}"></span></div><form method="post" role="form" th:action="@{/gharnata/add-client}"><div class="fields"><div class="field"><label class="field-label" for="ice"><span id="lice">I.C.E :</span> <span class="required">*</span></label><input type="text" class="control" id="ice" placeholder="ICE..." th:value="${cls.ice}" name="ice" required></div><div class="field"><label class="field-label" for="ste"><span id="lste">Raison sociale :</span> <span class="required">*</span></label><input type="text" class="control" id="ste" placeholder="Raison sociale..." th:value="${cls.ste}" name="ste" required></div><div class="field"><label class="field-label" for="adr">Adresse</label><input type="text" class="control" id="adr" placeholder="Adresse du client..." th:value="${cls.adresse}" name="adresse"></div><div class="field"><label class="field-label" for="tel">Téléphone</label><input type="tel" class="control" id="tel" placeholder="+212 6 00 00 00 00" th:value="${cls.tel}" name="tel"></div><div class="type-box"><p>Type de client <span class="required">*</span></p><div class="type-options"><label class="type-option"><input type="radio" id="type1" name="type" value="societe" th:checked="${cls.type == 'societe' || cls.type == null}" required><span>Société</span></label><label class="type-option"><input type="radio" id="type2" name="type" value="personne" th:checked="${cls.type == 'personne'}" required><span>Personne</span></label></div></div></div><div class="form-actions"><a class="btn btn-light" th:href="@{/gharnata/list-clients}">Annuler</a><button class="btn btn-primary" type="submit"><i class="fa fa-plus"></i> Ajouter le client</button></div></form></div><footer class="footer">© 2026 Gharnata · Gestion de stock</footer></section></main></div>
-<div class="modal fade" id="addCat" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h4 class="modal-title">Ajouter une catégorie</h4><button type="button" class="close" data-dismiss="modal">&times;</button></div><form method="post" role="form" th:action="@{/gharnata/add-categorie}"><div class="modal-body"><label for="cat">Nom de la catégorie</label><input type="text" class="control" id="cat" placeholder="Ex. Revêtement mural" name="cat" required></div><div class="modal-footer"><button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button><button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Ajouter</button></div></form></div></div></div>
-<div class="modal fade" id="loadProds" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h4 class="modal-title">Télécharger la liste des produits</h4><button type="button" class="close" data-dismiss="modal">&times;</button></div><form method="post" role="form" th:action="@{/gharnata/load-prods}"><div class="modal-body"><label for="idCat">Catégorie</label><select class="control" name="idCat" id="idCat" required><option value="0">Toutes les catégories</option><th:block th:each="cat : ${cats}"><option th:value="${cat.id}" th:text="${cat.lib}"></option></th:block></select><div class="check-row"><label><input type="checkbox" id="qt" name="qt" checked> Quantité</label><label><input type="checkbox" id="pr" name="pr" checked> Prix</label></div></div><div class="modal-footer"><button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button><button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Télécharger</button></div></form></div></div></div>
-<script src="/assets/js/jquery.min.js"></script><script src="/assets/js/popper.min.js"></script><script src="/assets/js/bootstrap.min.js"></script><script>(function(){var sidebar=document.getElementById('sidebar'),toggle=document.getElementById('sidebarToggle');if(toggle)toggle.addEventListener('click',function(){sidebar.classList.toggle('open')});document.addEventListener('click',function(e){if(window.innerWidth<=780&&sidebar.classList.contains('open')&&!sidebar.contains(e.target)&&e.target!==toggle&&!toggle.contains(e.target))sidebar.classList.remove('open')});var t1=document.getElementById('type1'),t2=document.getElementById('type2'),ice=document.getElementById('ice'),lice=document.getElementById('lice'),lste=document.getElementById('lste'),ste=document.getElementById('ste');function updateClientType(){var person=t2.checked;lice.textContent=person?'C.I.N :':'I.C.E :';lste.textContent=person?'Nom complet :':'Raison sociale :';ste.placeholder=person?'Nom complet...':'Raison sociale...';ice.placeholder=person?'CIN...':'ICE...';var now=new Date(),stamp=String(now.getSeconds()).padStart(2,'0')+String(now.getMinutes()).padStart(2,'0')+String(now.getHours()).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+String(now.getMonth()+1).padStart(2,'0')+now.getFullYear();ice.value=(person?'cin':'ice')+stamp}if(t1&&t2){updateClientType();t1.addEventListener('change',updateClientType);t2.addEventListener('change',updateClientType)} }());</script>
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <div class="brand"><a th:href="@{/gharnata/}"><img src="/assets/images/logo/logo_icon.png" alt="Gharnata"></a>
+            <div><strong>Gharnata</strong><small>Gestion de stock</small></div>
+        </div>
+        <div class="menu-label">Espace de travail</div>
+        <ul class="nav-list">
+            <li><a href="#products" data-toggle="collapse" aria-expanded="false"><i class="fa fa-cubes"></i><span>Produits</span><i
+                    class="fa fa-angle-down chevron"></i></a>
+                <ul class="submenu collapse" id="products">
+                    <li><a th:href="@{/gharnata/show-products}"><span>Vue d'ensemble</span></a></li>
+                    <li><a th:href="@{/gharnata/add-product}"><span>Ajouter un produit</span></a></li>
+                    <li><a th:href="@{/gharnata/modify-product}"><span>Modifier un produit</span></a></li>
+                </ul>
+            </li>
+            <li><a th:href="@{/gharnata/show-commands}"><i class="fa fa-archive"></i><span>Commandes</span></a></li>
+            <li class="active"><a th:href="@{/gharnata/list-clients}"><i
+                    class="fa fa-users"></i><span>Clients</span></a></li>
+            <li><a th:href="@{/gharnata/pass-mass}"><i class="fa fa-bolt"></i><span>Produits en masse</span></a></li>
+            <li><a th:href="@{/gharnata/sim-fac}"><i class="fa fa-file-text-o"></i><span>Simuler une facture</span></a>
+            </li>
+        </ul>
+        <div class="menu-label">Outils</div>
+        <ul class="nav-list">
+            <li><a href="#operations" data-toggle="collapse" aria-expanded="false"><i class="fa fa-diamond"></i><span>Opérations</span><i
+                    class="fa fa-angle-down chevron"></i></a>
+                <ul class="submenu collapse" id="operations">
+                    <li><a href="#" data-toggle="modal" data-target="#addCat"><span>Ajouter une catégorie</span></a>
+                    </li>
+                    <li><a href="#" data-toggle="modal"
+                           data-target="#loadProds"><span>Télécharger les produits</span></a></li>
+                    <li><a th:href="@{/gharnata/show-products-stock}"><span>État du stock</span></a></li>
+                </ul>
+            </li>
+        </ul>
+        <div class="sidebar-bottom"><i class="fa fa-circle"></i> Système opérationnel</div>
+    </aside>
+    <main class="main">
+        <header class="topbar">
+            <div class="d-flex align-items-center">
+                <button class="mobile-toggle" type="button" id="sidebarToggle" aria-label="Ouvrir le menu"><i
+                        class="fa fa-bars"></i></button>
+                <div class="crumbs"><span>Clients</span><i class="fa fa-angle-right"></i><strong>Ajouter un
+                    client</strong></div>
+            </div>
+            <div class="top-actions"><a class="icon-btn" th:href="@{/gharnata/notif-stock}"
+                                        aria-label="Notifications"><i class="fa fa-bell-o"></i><span
+                    th:if="${notif != 0}" class="notification"></span></a>
+                <div class="profile"><img src="/images/profile.png" alt="Photo de profil">
+                    <div><span class="profile-name" th:text="${#authentication.name}">Administrateur</span><span
+                            class="profile-role">Administrateur</span></div>
+                    <a th:href="@{/logout}" class="text-muted ml-2" aria-label="Se déconnecter"><i
+                            class="fa fa-sign-out"></i></a></div>
+            </div>
+        </header>
+        <section class="page">
+            <div class="page-heading">
+                <div><p class="eyebrow">Gestion de la clientèle</p>
+                    <h1>Ajouter un client</h1>
+                    <p class="subtitle">Créez une fiche client pour gérer ses commandes et ses paiements.</p></div>
+                <a class="back-link" th:href="@{/gharnata/list-clients}"><i class="fa fa-arrow-left"></i> Retour aux
+                    clients</a></div>
+            <div class="form-card">
+                <div class="form-intro">
+                    <div class="intro-icon"><i class="fa fa-user-plus"></i></div>
+                    <div><h2>Informations du client</h2>
+                        <p>Les champs marqués d’un astérisque sont obligatoires.</p></div>
+                </div>
+                <div th:if="${error}" class="alert alert-danger" role="alert"><i
+                        class="fa fa-exclamation-circle mr-2"></i><span th:text="${error}"></span></div>
+                <div th:if="${success}" class="alert alert-success" role="alert"><i class="fa fa-check-circle mr-2"></i><span
+                        th:text="${success}"></span></div>
+                <form method="post" role="form" th:action="@{/gharnata/add-client}">
+                    <div class="fields">
+                        <div class="field"><label class="field-label" for="ice"><span id="lice">I.C.E :</span> <span
+                                class="required">*</span></label><input type="text" class="control" id="ice"
+                                                                        placeholder="ICE..." th:value="${cls.ice}"
+                                                                        name="ice" required></div>
+                        <div class="field"><label class="field-label" for="ste"><span id="lste">Raison sociale :</span>
+                            <span class="required">*</span></label><input type="text" class="control" id="ste"
+                                                                          placeholder="Raison sociale..."
+                                                                          th:value="${cls.ste}" name="ste" required>
+                        </div>
+                        <div class="field"><label class="field-label" for="adr">Adresse</label><input type="text"
+                                                                                                      class="control"
+                                                                                                      id="adr"
+                                                                                                      placeholder="Adresse du client..."
+                                                                                                      th:value="${cls.adresse}"
+                                                                                                      name="adresse">
+                        </div>
+                        <div class="field"><label class="field-label" for="tel">Téléphone</label><input type="tel"
+                                                                                                        class="control"
+                                                                                                        id="tel"
+                                                                                                        placeholder="+212 6 00 00 00 00"
+                                                                                                        th:value="${cls.tel}"
+                                                                                                        name="tel">
+                        </div>
+                        <div class="type-box"><p>Type de client <span class="required">*</span></p>
+                            <div class="type-options"><label class="type-option"><input type="radio" id="type1"
+                                                                                        name="type" value="societe"
+                                                                                        th:checked="${cls.type == 'societe' || cls.type == null}"
+                                                                                        required><span>Société</span></label><label
+                                    class="type-option"><input type="radio" id="type2" name="type" value="personne"
+                                                               th:checked="${cls.type == 'personne'}" required><span>Personne</span></label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions"><a class="btn btn-light" th:href="@{/gharnata/list-clients}">Annuler</a>
+                        <button class="btn btn-primary" type="submit"><i class="fa fa-plus"></i> Ajouter le client
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
+        </section>
+    </main>
+</div>
+<div class="modal fade" id="addCat" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h4 class="modal-title">Ajouter une catégorie</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="post" role="form" th:action="@{/gharnata/add-categorie}">
+                <div class="modal-body"><label for="cat">Nom de la catégorie</label><input type="text" class="control"
+                                                                                           id="cat"
+                                                                                           placeholder="Ex. Revêtement mural"
+                                                                                           name="cat" required></div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-plus"></i> Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="loadProds" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h4 class="modal-title">Télécharger la liste des produits</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="post" role="form" th:action="@{/gharnata/load-prods}">
+                <div class="modal-body"><label for="idCat">Catégorie</label><select class="control" name="idCat"
+                                                                                    id="idCat" required>
+                    <option value="0">Toutes les catégories</option>
+                    <th:block th:each="cat : ${cats}">
+                        <option th:value="${cat.id}" th:text="${cat.lib}"></option>
+                    </th:block>
+                </select>
+                    <div class="check-row"><label><input type="checkbox" id="qt" name="qt" checked>
+                        Quantité</label><label><input type="checkbox" id="pr" name="pr" checked> Prix</label></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Télécharger</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="/assets/js/jquery.min.js"></script>
+<script src="/assets/js/popper.min.js"></script>
+<script src="/assets/js/bootstrap.min.js"></script>
+<script>(function () {
+    var sidebar = document.getElementById('sidebar'), toggle = document.getElementById('sidebarToggle');
+    if (toggle) toggle.addEventListener('click', function () {
+        sidebar.classList.toggle('open')
+    });
+    document.addEventListener('click', function (e) {
+        if (window.innerWidth <= 780 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) sidebar.classList.remove('open')
+    });
+    var t1 = document.getElementById('type1'), t2 = document.getElementById('type2'),
+        ice = document.getElementById('ice'), lice = document.getElementById('lice'),
+        lste = document.getElementById('lste'), ste = document.getElementById('ste');
+
+    function updateClientType() {
+        var person = t2.checked;
+        lice.textContent = person ? 'C.I.N :' : 'I.C.E :';
+        lste.textContent = person ? 'Nom complet :' : 'Raison sociale :';
+        ste.placeholder = person ? 'Nom complet...' : 'Raison sociale...';
+        ice.placeholder = person ? 'CIN...' : 'ICE...';
+        var now = new Date(),
+            stamp = String(now.getSeconds()).padStart(2, '0') + String(now.getMinutes()).padStart(2, '0') + String(now.getHours()).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + String(now.getMonth() + 1).padStart(2, '0') + now.getFullYear();
+        ice.value = (person ? 'cin' : 'ice') + stamp
+    }
+
+    if (t1 && t2) {
+        updateClientType();
+        t1.addEventListener('change', updateClientType);
+        t2.addEventListener('change', updateClientType)
+    }
+}());</script>
 
 <script>
     if ("serviceWorker" in navigator) {
