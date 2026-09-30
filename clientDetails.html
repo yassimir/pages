@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Détails et paiements client Gharnata">
+    <title>Gharnata | Détails client</title>
+    <link rel="icon" href="/assets/images/logo/logo_icon.png" type="image/png">
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
+    <style>
+        :root {
+            --ink: #172033;
+            --muted: #7e889d;
+            --line: #e8ebf2;
+            --surface: #fff;
+            --canvas: #f5f7fb;
+            --navy: #1c2742;
+            --blue: #3977f6;
+            --blue-soft: #edf3ff;
+            --green: #16a37a;
+            --orange: #f59e0b;
+            --red: #e45f68;
+            --shadow: 0 16px 40px rgba(35, 49, 85, .08)
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--canvas);
+            color: var(--ink);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-size: 14px
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none
+        }
+
+        a:hover {
+            text-decoration: none
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            display: flex
+        }
+
+        .sidebar {
+            width: 260px;
+            flex: 0 0 260px;
+            min-height: 100vh;
+            background: var(--navy);
+            color: #aeb9d0;
+            padding: 22px 14px;
+            position: fixed;
+            z-index: 20;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            transition: transform .25s ease
+        }
+
+        .brand {
+            height: 58px;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            margin-bottom: 30px
+        }
+
+        .brand img {
+            width: 39px;
+            height: 39px;
+            object-fit: contain;
+            margin-right: 11px;
+            background: #fff;
+            border-radius: 11px;
+            padding: 5px
+        }
+
+        .brand strong {
+            color: #fff;
+            font-size: 17px;
+            display: block;
+            line-height: 1.1
+        }
+
+        .brand small {
+            color: #8492b0;
+            font-size: 10px;
+            letter-spacing: 1.3px;
+            text-transform: uppercase
+        }
+
+        .menu-label {
+            padding: 0 14px;
+            color: #6f7e9f;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.3px;
+            margin: 19px 0 9px;
+            font-weight: 700
+        }
+
+        .nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0
+        }
+
+        .nav-list li {
+            margin: 3px 0
+        }
+
+        .nav-list > li > a, .nav-list .submenu a {
+            display: flex;
+            align-items: center;
+            min-height: 45px;
+            border-radius: 10px;
+            padding: 0 14px;
+            transition: all .2s
+        }
+
+        .nav-list > li > a:hover, .nav-list .submenu a:hover {
+            background: rgba(255, 255, 255, .07);
+            color: #fff
+        }
+
+        .nav-list > li > a i {
+            width: 27px;
+            color: #8493b2;
+            font-size: 16px
+        }
+
+        .nav-list > li.active > a {
+            background: linear-gradient(90deg, rgba(57, 119, 246, .25), rgba(57, 119, 246, .08));
+            color: #fff;
+            box-shadow: inset 3px 0 var(--blue)
+        }
+
+        .nav-list > li.active > a i {
+            color: #73a0ff
+        }
+
+        .chevron {
+            margin-left: auto !important;
+            width: auto !important;
+            font-size: 11px !important;
+            color: #7483a2 !important
+        }
+
+        .submenu {
+            list-style: none;
+            margin: 2px 0 7px 27px;
+            padding: 0 0 0 12px;
+            border-left: 1px solid #34415e
+        }
+
+        .submenu a {
+            min-height: 35px !important;
+            font-size: 12px;
+            padding: 0 10px !important
+        }
+
+        .submenu a.current {
+            color: #80a7ff;
+            font-weight: 600
+        }
+
+        .sidebar-bottom {
+            position: absolute;
+            left: 14px;
+            right: 14px;
+            bottom: 20px;
+            border-top: 1px solid rgba(255, 255, 255, .08);
+            padding: 17px 12px 0;
+            color: #8492b0;
+            font-size: 11px
+        }
+
+        .sidebar-bottom i {
+            color: #63c99f;
+            margin-right: 7px
+        }
+
+        .main {
+            margin-left: 260px;
+            width: calc(100% - 260px);
+            min-width: 0
+        }
+
+        .topbar {
+            height: 76px;
+            background: rgba(255, 255, 255, .92);
+            border-bottom: 1px solid var(--line);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 4.2%;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(14px)
+        }
+
+        .mobile-toggle {
+            border: 0;
+            background: transparent;
+            color: var(--ink);
+            font-size: 21px;
+            display: none
+        }
+
+        .crumbs {
+            color: var(--muted);
+            font-size: 13px
+        }
+
+        .crumbs i {
+            margin: 0 10px;
+            font-size: 10px
+        }
+
+        .crumbs strong {
+            color: var(--ink);
+            font-weight: 600
+        }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 19px
+        }
+
+        .icon-btn {
+            position: relative;
+            color: #77839a;
+            font-size: 18px
+        }
+
+        .notification {
+            position: absolute;
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--red);
+            top: 0;
+            right: -3px;
+            border: 2px solid #fff;
+            box-sizing: content-box
+        }
+
+        .profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 1px solid var(--line);
+            padding-left: 18px
+        }
+
+        .profile img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #e9eef9
+        }
+
+        .profile-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ink)
+        }
+
+        .profile-role {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 2px
+        }
+
+        .page {
+            padding: 38px 4.2% 32px;
+            max-width: 1500px
+        }
+
+        .page-heading {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 27px
+        }
+
+        .eyebrow {
+            color: var(--blue);
+            font-size: 11px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 0 0 9px
+        }
+
+        h1 {
+            font-size: 28px;
+            margin: 0;
+            letter-spacing: -.7px;
+            font-weight: 750
+        }
+
+        .subtitle {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 14px
+        }
+
+        .back-link {
+            color: var(--muted);
+            font-size: 13px;
+            padding-top: 8px
+        }
+
+        .back-link i {
+            margin-right: 6px
+        }
+
+        .alert {
+            border: 0;
+            border-radius: 11px;
+            padding: 13px 16px;
+            margin-bottom: 18px;
+            font-size: 12px
+        }
+
+        .alert-danger {
+            background: #fff0f1;
+            color: #a23e4b
+        }
+
+        .alert-success {
+            background: #eafaf4;
+            color: #14795d
+        }
+
+        .client-card {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 27px 29px;
+            margin-bottom: 22px
+        }
+
+        .client-summary {
+            display: grid;
+            grid-template-columns:1.3fr 1fr 1fr;
+            gap: 24px
+        }
+
+        .summary-block {
+            min-height: 120px;
+            padding-right: 20px;
+            border-right: 1px solid var(--line)
+        }
+
+        .summary-block:last-child {
+            border-right: 0
+        }
+
+        .summary-label {
+            color: var(--muted);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 800;
+            margin: 0 0 12px
+        }
+
+        .summary-block h2 {
+            font-size: 18px;
+            margin: 0 0 10px;
+            font-weight: 750
+        }
+
+        .summary-block p {
+            color: #69758d;
+            font-size: 12px;
+            line-height: 1.85;
+            margin: 0
+        }
+
+        .summary-block strong {
+            color: #4c5870
+        }
+
+        .credit {
+            font-size: 22px !important;
+            color: var(--red) !important;
+            font-weight: 800
+        }
+
+        .actions {
+            margin-top: 19px;
+            display: flex;
+            gap: 9px;
+            flex-wrap: wrap
+        }
+
+        .btn {
+            border: 0;
+            border-radius: 8px;
+            min-height: 40px;
+            padding: 0 14px;
+            font-size: 11px;
+            font-weight: 700;
+            transition: .2s
+        }
+
+        .btn:hover {
+            transform: translateY(-1px)
+        }
+
+        .btn-primary {
+            color: #fff;
+            background: var(--blue);
+            box-shadow: 0 7px 15px rgba(57, 119, 246, .2)
+        }
+
+        .btn-success {
+            color: #fff;
+            background: var(--green)
+        }
+
+        .btn-light {
+            color: #66728a;
+            background: #f1f3f7
+        }
+
+        .btn i {
+            margin-right: 6px
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns:1fr 1fr;
+            gap: 22px
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            box-shadow: var(--shadow);
+            padding: 23px 24px
+        }
+
+        .panel-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 17px;
+            margin-bottom: 5px
+        }
+
+        .panel-head h2 {
+            font-size: 16px;
+            margin: 0;
+            font-weight: 700
+        }
+
+        .panel-head i {
+            color: var(--blue);
+            margin-right: 7px
+        }
+
+        .list {
+            list-style: none;
+            padding: 0;
+            margin: 0
+        }
+
+        .list-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--line)
+        }
+
+        .list-item:last-child {
+            border-bottom: 0
+        }
+
+        .list-item:hover .item-title {
+            color: var(--blue)
+        }
+
+        .item-main {
+            min-width: 0
+        }
+
+        .item-title {
+            display: block;
+            color: var(--ink);
+            font-size: 12px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        .item-sub {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 5px
+        }
+
+        .item-date {
+            color: #a0aabd;
+            font-size: 10px;
+            white-space: nowrap
+        }
+
+        .badge {
+            border-radius: 20px;
+            padding: 4px 8px;
+            font-size: 10px;
+            font-weight: 800;
+            white-space: nowrap
+        }
+
+        .badge-paid {
+            background: #e9faf4;
+            color: #14795d
+        }
+
+        .badge-credit {
+            background: #fff5df;
+            color: #a56a00
+        }
+
+        .payment-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 5px
+        }
+
+        .download-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #cbd9fb;
+            border-radius: 7px;
+            background: #fff;
+            color: var(--blue);
+            display: grid;
+            place-items: center
+        }
+
+        .download-btn:hover {
+            background: var(--blue);
+            color: #fff
+        }
+
+        .empty {
+            padding: 33px 0;
+            text-align: center;
+            color: var(--muted);
+            font-size: 12px
+        }
+
+        .empty i {
+            display: block;
+            color: #c9d5eb;
+            font-size: 30px;
+            margin-bottom: 10px
+        }
+
+        .see-all {
+            display: inline-block;
+            color: var(--blue);
+            font-size: 11px;
+            font-weight: 700;
+            margin-top: 14px
+        }
+
+        .footer {
+            color: #a2aabd;
+            font-size: 11px;
+            text-align: center;
+            padding: 32px 0 4px
+        }
+
+        .modal-content {
+            border: 0;
+            border-radius: 16px;
+            box-shadow: var(--shadow)
+        }
+
+        .modal-header, .modal-footer {
+            border-color: var(--line);
+            padding: 18px 22px
+        }
+
+        .modal-title {
+            font-size: 17px;
+            font-weight: 700
+        }
+
+        .modal-body {
+            padding: 22px
+        }
+
+        .modal .close {
+            font-size: 24px;
+            font-weight: 400;
+            color: #9ba5b8
+        }
+
+        .field {
+            margin-bottom: 17px
+        }
+
+        .field-label {
+            display: block;
+            color: #46526b;
+            font-size: 12px;
+            font-weight: 700;
+            margin: 0 0 8px
+        }
+
+        .control {
+            width: 100%;
+            height: 47px;
+            border: 1px solid #dfe4ee;
+            border-radius: 9px;
+            color: var(--ink);
+            background: #fbfcfe;
+            padding: 0 14px;
+            outline: none;
+            font-size: 13px
+        }
+
+        .control:focus {
+            border-color: #7ea5fc;
+            box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
+            background: #fff
+        }
+
+        .file-box {
+            border: 1px dashed #c9d2e2;
+            border-radius: 10px;
+            padding: 15px;
+            background: #fbfcff;
+            position: relative
+        }
+
+        .file-box:hover {
+            border-color: var(--blue);
+            background: var(--blue-soft)
+        }
+
+        .file-box input {
+            width: 100%;
+            font-size: 12px;
+            color: var(--muted)
+        }
+
+        .file-help {
+            display: block;
+            color: var(--muted);
+            font-size: 10px;
+            margin-top: 7px
+        }
+
+        .check-row {
+            display: flex;
+            gap: 25px;
+            margin-top: 14px
+        }
+
+        .check-row label {
+            font-weight: 500;
+            font-size: 12px;
+            color: #46526b
+        }
+
+        @media (max-width: 900px) {
+            .client-summary {
+                grid-template-columns:1fr 1fr
+            }
+
+            .summary-block:nth-child(2) {
+                border-right: 0
+            }
+
+            .summary-block:last-child {
+                grid-column: 1/-1;
+                border-top: 1px solid var(--line);
+                padding-top: 19px
+            }
+        }
+
+        @media (max-width: 780px) {
+            .sidebar {
+                transform: translateX(-100%);
+                box-shadow: 10px 0 30px rgba(0, 0, 0, .15)
+            }
+
+            .sidebar.open {
+                transform: translateX(0)
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%
+            }
+
+            .mobile-toggle {
+                display: block;
+                margin-right: 14px
+            }
+
+            .topbar {
+                padding: 0 20px
+            }
+
+            .crumbs {
+                display: none
+            }
+
+            .page {
+                padding: 28px 18px
+            }
+
+            .page-heading {
+                display: block
+            }
+
+            .back-link {
+                display: inline-block;
+                margin-top: 16px
+            }
+
+            .client-card, .panel {
+                padding: 21px 17px
+            }
+        }
+
+        @media (max-width: 560px) {
+            h1 {
+                font-size: 24px
+            }
+
+            .profile-name, .profile-role {
+                display: none
+            }
+
+            .profile {
+                padding-left: 10px
+            }
+
+            .client-summary {
+                grid-template-columns:1fr;
+                gap: 16px
+            }
+
+            .summary-block, .summary-block:nth-child(2) {
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+                padding: 0 0 16px
+            }
+
+            .summary-block:last-child {
+                grid-column: auto;
+                border-top: 0;
+                border-bottom: 0;
+                padding-top: 0
+            }
+
+            .content-grid {
+                grid-template-columns:1fr
+            }
+
+            .actions .btn {
+                width: 100%
+            }
+
+            .list-item {
+                align-items: flex-start
+            }
+
+            .item-date {
+                display: none
+            }
+        }
+    </style>
+
+    <!-- PWA -->
+    <link rel="manifest" th:href="@{/manifest.json}">
+
+    <meta name="theme-color" content="#0d6efd">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Gestion de stock">
+
+    <link rel="apple-touch-icon"
+          th:href="@{/icons/icon-192.png}">
+</head>
+<body>
+<div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+        <div class="brand"><a th:href="@{/gharnata/}"><img src="/assets/images/logo/logo_icon.png" alt="Gharnata"></a>
+            <div><strong>Gharnata</strong><small>Gestion de stock</small></div>
+        </div>
+        <div class="menu-label">Espace de travail</div>
+        <ul class="nav-list">
+            <li><a href="#products" data-toggle="collapse" aria-expanded="false"><i class="fa fa-cubes"></i><span>Produits</span><i
+                    class="fa fa-angle-down chevron"></i></a>
+                <ul class="submenu collapse" id="products">
+                    <li><a th:href="@{/gharnata/show-products}"><span>Vue d'ensemble</span></a></li>
+                    <li><a th:href="@{/gharnata/add-product}"><span>Ajouter un produit</span></a></li>
+                    <li><a th:href="@{/gharnata/modify-product}"><span>Modifier un produit</span></a></li>
+                </ul>
+            </li>
+            <li><a th:href="@{/gharnata/show-commands}"><i class="fa fa-archive"></i><span>Commandes</span></a></li>
+            <li class="active"><a th:href="@{/gharnata/list-clients}"><i
+                    class="fa fa-users"></i><span>Clients</span></a></li>
+            <li><a th:href="@{/gharnata/pass-mass}"><i class="fa fa-bolt"></i><span>Produits en masse</span></a></li>
+            <li><a th:href="@{/gharnata/sim-fac}"><i class="fa fa-file-text-o"></i><span>Simuler une facture</span></a>
+            </li>
+        </ul>
+        <div class="menu-label">Outils</div>
+        <ul class="nav-list">
+            <li><a href="#operations" data-toggle="collapse" aria-expanded="false"><i class="fa fa-diamond"></i><span>Opérations</span><i
+                    class="fa fa-angle-down chevron"></i></a>
+                <ul class="submenu collapse" id="operations">
+                    <li><a href="#" data-toggle="modal" data-target="#addCat"><span>Ajouter une catégorie</span></a>
+                    </li>
+                    <li><a href="#" data-toggle="modal"
+                           data-target="#loadProds"><span>Télécharger les produits</span></a></li>
+                    <li><a th:href="@{/gharnata/show-products-stock}"><span>État du stock</span></a></li>
+                </ul>
+            </li>
+        </ul>
+        <div class="sidebar-bottom"><i class="fa fa-circle"></i> Système opérationnel</div>
+    </aside>
+    <main class="main">
+        <header class="topbar">
+            <div class="d-flex align-items-center">
+                <button class="mobile-toggle" type="button" id="sidebarToggle" aria-label="Ouvrir le menu"><i
+                        class="fa fa-bars"></i></button>
+                <div class="crumbs"><span>Clients</span><i class="fa fa-angle-right"></i><strong
+                        th:text="${client.ste}">Détails client</strong></div>
+            </div>
+            <div class="top-actions"><a class="icon-btn" th:href="@{/gharnata/notif-stock}"
+                                        aria-label="Notifications"><i class="fa fa-bell-o"></i><span
+                    th:if="${notif != 0}" class="notification"></span></a>
+                <div class="profile"><img src="/images/profile.png" alt="Photo de profil">
+                    <div><span class="profile-name" th:text="${#authentication.name}">Administrateur</span><span
+                            class="profile-role">Administrateur</span></div>
+                    <a th:href="@{/logout}" class="text-muted ml-2" aria-label="Se déconnecter"><i
+                            class="fa fa-sign-out"></i></a></div>
+            </div>
+        </header>
+        <section class="page">
+            <div class="page-heading">
+                <div><p class="eyebrow">Fiche client</p>
+                    <h1 th:text="${'Détails du client n°'+ client.id}">Détails du client</h1>
+                    <p class="subtitle">Consultez l'historique des commandes et des paiements de ce client.</p></div>
+                <a class="back-link" th:href="@{/gharnata/list-clients}"><i class="fa fa-arrow-left"></i> Retour aux
+                    clients</a></div>
+            <div th:if="${error}" class="alert alert-danger" role="alert" id="err"><i
+                    class="fa fa-exclamation-circle mr-2"></i><span th:text="${error}"></span></div>
+            <div th:if="${success}" class="alert alert-success" role="alert" id="suc"><i
+                    class="fa fa-check-circle mr-2"></i><span th:text="${success}"></span></div>
+            <div class="client-card">
+                <div class="client-summary">
+                    <div class="summary-block"><p class="summary-label">Identité</p>
+                        <h2 th:text="${'STE : '+client.ste}"></h2>
+                        <p th:if="${client.type == 'societe'}"><strong>I.C.E :</strong> <span
+                                th:text="${client.ice}"></span></p>
+                        <p th:if="${client.type == 'personne'}"><strong>C.I.N :</strong> <span
+                                th:text="${client.ice}"></span></p>
+                        <p><strong>Tél :</strong> <a th:href="${'tel:'+ client.tel}"
+                                                     th:text="${client.tel}"></a><br><strong>Adresse :</strong> <span
+                                th:text="${client.adresse}"></span></p></div>
+                    <div class="summary-block"><p class="summary-label">Solde du compte</p>
+                        <p class="credit" th:text="${client.getCompte().getCredit()+ ' DH'}"></p>
+                        <p>Crédit actuellement enregistré</p>
+                        <div class="actions">
+                            <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#payModal"><i
+                                    class="fa fa-dollar"></i> Introduire un paiement
+                            </button>
+                        </div>
+                    </div>
+                    <div class="summary-block"><p class="summary-label">Actions rapides</p>
+                        <p>Gérez les commandes et consultez l'historique financier du client.</p>
+                        <div class="actions"><a class="btn btn-light"
+                                                th:href="@{/gharnata/commandes/{id}(id=${client.id})}"><i
+                                class="fa fa-list"></i> Toutes les commandes</a><a class="btn btn-light"
+                                                                                   th:href="@{/gharnata/paiements/{id}(id=${client.id})}"><i
+                                class="fa fa-history"></i> Tous les paiements</a></div>
+                    </div>
+                </div>
+            </div>
+            <div class="content-grid">
+                <div class="panel">
+                    <div class="panel-head"><h2><i class="fa fa-archive"></i> Commandes récentes</h2><a
+                            th:href="@{/gharnata/commandes/{id}(id=${client.id})}" class="see-all">Voir tout</a></div>
+                    <ul class="list">
+                        <th:block th:if="${commandes.isEmpty()}">
+                            <li class="empty"><i class="fa fa-inbox"></i>Pas de commandes pour ce client</li>
+                        </th:block>
+                        <th:block th:each="commande : ${commandes}">
+                            <li class="list-item"><a class="item-main"
+                                                     th:href="@{/gharnata/command-details/{id}(id=${commande.id})}"><span
+                                    class="item-title" th:if="${commande.isPaye()}"
+                                    th:text="${'Commande nº '+commande.id}"></span><span class="item-title"
+                                                                                         th:if="${!commande.isPaye()}"
+                                                                                         th:text="${'Commande nº '+commande.id}"></span><span
+                                    class="item-sub" th:text="${'Montant : '+commande.montantHT+' DH'}"></span></a>
+                                <div><span class="badge badge-paid" th:if="${commande.isPaye()}">Payée</span><span
+                                        class="badge badge-credit" th:if="${!commande.isPaye()}">Crédit</span><span
+                                        class="item-date" th:text="${commande.date}"></span></div>
+                            </li>
+                        </th:block>
+                    </ul>
+                </div>
+                <div class="panel">
+                    <div class="panel-head"><h2><i class="fa fa-credit-card"></i> Paiements</h2><a
+                            th:href="@{/gharnata/paiements/{id}(id=${client.id})}" class="see-all">Voir tout</a></div>
+                    <ul class="list">
+                        <th:block th:if="${payments.isEmpty()}">
+                            <li class="empty"><i class="fa fa-inbox"></i>Pas de paiements pour ce client</li>
+                        </th:block>
+                        <th:block th:each="payment : ${payments}">
+                            <li class="list-item">
+                                <div class="item-main"><span class="item-title"
+                                                             th:text="${payment.id+' | '+payment.description}"></span><span
+                                        class="item-sub" th:text="${'Montant : '+payment.montant+' DH'}"></span></div>
+                                <div class="payment-actions"><span class="item-date"
+                                                                   th:text="${payment.datePay}"></span>
+                                    <form method="post" th:action="@{/gharnata/telecharger-facture}"><input
+                                            type="hidden" name="id" th:value="${payment.id}">
+                                        <button type="submit" class="download-btn" title="Télécharger la facture"><i
+                                                class="fa fa-download"></i></button>
+                                        <input type="checkbox" name="tmp" hidden></form>
+                                </div>
+                            </li>
+                        </th:block>
+                    </ul>
+                </div>
+            </div>
+            <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
+        </section>
+    </main>
+</div>
+
+<div class="modal fade" id="payModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h4 class="modal-title">Introduire un paiement</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="post" role="form" th:action="@{/gharnata/payment}" enctype="multipart/form-data">
+                <div class="modal-body"><input type="hidden" name="idC" th:value="${client.id}">
+                    <div class="field"><label class="field-label" for="montant">Montant du paiement</label><input
+                            type="number" class="control" id="montant" placeholder="Ex. 1500.00" name="montant"
+                            min="0.01" step="0.01" required></div>
+                    <div class="field"><label class="field-label" for="modPai">Méthode de paiement</label><select
+                            class="control" id="modPai" name="modPai" onchange="updatePaymentInfo()" required>
+                        <option value="">Sélectionner une méthode</option>
+                        <option value="Virement">Virement bancaire</option>
+                        <option value="Chèque">Chèque</option>
+                        <option value="Espèces">Espèces</option>
+                        <option value="Effet">Effet</option>
+                    </select></div>
+                    <div class="field"><label class="field-label" for="pInfo">Référence ou détails <span
+                            style="color:var(--muted);font-weight:400">(facultatif)</span></label><input class="control"
+                                                                                                         type="text"
+                                                                                                         id="pInfo"
+                                                                                                         name="pInfo"
+                                                                                                         placeholder="Nº de chèque, référence de virement...">
+                    </div>
+                    <div class="field"><label class="field-label" for="justificatif">Justificatif de paiement <span
+                            style="color:var(--muted);font-weight:400">(facultatif)</span></label>
+                        <div class="file-box"><input type="file" id="justificatif" name="justificatif"
+                                                     accept=".pdf,.jpg,.jpeg,.png"><span class="file-help">PDF, JPG ou PNG · 5 Mo maximum</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-success"><i class="fa fa-check"></i> Enregistrer le paiement
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="addCat" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h4 class="modal-title">Ajouter une catégorie</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="post" role="form" th:action="@{/gharnata/add-categorie}"
+                  hx-post="/gharnata/add-categorie"
+                  hx-target="#cat-select-container"
+                  hx-swap="outerHTML"
+                  hx-on::after-request="if(event.detail.successful){ $('#addCat').modal('hide'); this.reset(); }">
+                <div class="modal-body">
+                    <label for="cat">Nom de la catégorie</label>
+                    <input type="text" class="control" id="cat" placeholder="Ex. Revêtement mural" name="cat" required>
+                    <input type="hidden" name="redirectTo" th:value="${'/gharnata/client-details/' +client.id}">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-plus mr-1"></i> Ajouter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="loadProds" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h4 class="modal-title">Télécharger la liste des produits</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="post" role="form" th:action="@{/gharnata/load-prods}">
+                <div class="modal-body"><label class="field-label" for="idCat">Catégorie</label><select class="control"
+                                                                                                        name="idCat"
+                                                                                                        id="idCat"
+                                                                                                        required>
+                    <option value="0">Toutes les catégories</option>
+                    <th:block th:each="cat : ${cats}">
+                        <option th:value="${cat.id}" th:text="${cat.lib}"></option>
+                    </th:block>
+                </select>
+                    <div class="check-row"><label><input type="checkbox" id="qt" name="qt" checked>
+                        Quantité</label><label><input type="checkbox" id="pr" name="pr" checked> Prix</label></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Télécharger</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script src="/assets/js/jquery.min.js"></script>
+<script src="/assets/js/popper.min.js"></script>
+<script src="/assets/js/bootstrap.min.js"></script>
+<script>(function () {
+    var sidebar = document.getElementById('sidebar'), toggle = document.getElementById('sidebarToggle');
+    if (toggle) toggle.addEventListener('click', function () {
+        sidebar.classList.toggle('open')
+    });
+    document.addEventListener('click', function (e) {
+        if (window.innerWidth <= 780 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) sidebar.classList.remove('open')
+    });
+    var file = document.getElementById('justificatif');
+    if (file) file.addEventListener('change', function () {
+        if (file.files.length) {
+            var help = file.parentElement.querySelector('.file-help');
+            help.textContent = file.files[0].name
+        }
+    });
+    window.updatePaymentInfo = function () {
+        var method = document.getElementById('modPai'), info = document.getElementById('pInfo');
+        if (method && info && !info.value) info.placeholder = method.value ? 'Référence ' + method.value.toLowerCase() + ' (facultatif)...' : 'Référence ou détails...'
+    };
+    ['err', 'suc'].forEach(function (id) {
+        var el = document.getElementById(id);
+        if (el) setTimeout(function () {
+            el.style.transition = 'opacity .4s';
+            el.style.opacity = '0'
+        }, 5000)
+    });
+}());</script>
+
+<script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function (registration) {
+                    console.log(
+                        "Service Worker enregistré :",
+                        registration.scope
+                    );
+                })
+                .catch(function (error) {
+                    console.error(
+                        "Erreur Service Worker :",
+                        error
+                    );
+                });
+        });
+    }
+</script>
+
+</body>
+</html>
