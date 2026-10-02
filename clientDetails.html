@@ -867,8 +867,15 @@
                 <div class="profile"><img src="/images/profile.png" alt="Photo de profil">
                     <div><span class="profile-name" th:text="${#authentication.name}">Administrateur</span><span
                             class="profile-role">Administrateur</span></div>
-                    <a th:href="@{/logout}" class="text-muted ml-2" aria-label="Se déconnecter"><i
-                            class="fa fa-sign-out"></i></a></div>
+                    <form th:action="@{/logout}" method="post" style="display:inline;">
+                        <button type="submit"
+                                class="text-muted ml-2"
+                                aria-label="Se déconnecter"
+                                style="border:none; background:none; padding:0; cursor:pointer;">
+                            <i class="fa fa-sign-out"></i>
+                        </button>
+                    </form>
+                </div>
             </div>
         </header>
         <section class="page">
@@ -953,7 +960,7 @@
                                             type="hidden" name="id" th:value="${payment.id}">
                                         <button type="submit" class="download-btn" title="Télécharger la facture"><i
                                                 class="fa fa-download"></i></button>
-                                        <input type="checkbox" name="tmp" hidden></form>
+                                        <input type="checkbox" name="tmp"></form>
                                 </div>
                             </li>
                         </th:block>
