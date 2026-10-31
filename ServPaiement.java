@@ -24,15 +24,18 @@ public class ServPaiement {
     private final RepAffectationPaiement repAffectationPaiement;
     private final RepCommande repCommande;
     private final RepCompte repCompte;
+    private final UtilisateurConnecteService utilisateurConnecteService;
 
     public ServPaiement(RePaiement rePaiement,
                         RepAffectationPaiement repAffectationPaiement,
                         RepCommande repCommande,
-                        RepCompte repCompte) {
+                        RepCompte repCompte,
+                        UtilisateurConnecteService utilisateurConnecteService) {
         this.rePaiement = rePaiement;
         this.repAffectationPaiement = repAffectationPaiement;
         this.repCommande = repCommande;
         this.repCompte = repCompte;
+        this.utilisateurConnecteService = utilisateurConnecteService;
     }
 
     /**
@@ -68,6 +71,7 @@ public class ServPaiement {
         paiement.setDescription(description);
         paiement.setCommande(commande);
         paiement.setClient(commande.getClient());
+        paiement.setUtilisateur(this.utilisateurConnecteService.getUtilisateurConnecte());
 
         paiement = rePaiement.save(paiement);
 
@@ -110,6 +114,7 @@ public class ServPaiement {
         paiement.setModPai(modePaiement);
         paiement.setDescription(description);
         paiement.setClient(client);
+        paiement.setUtilisateur(this.utilisateurConnecteService.getUtilisateurConnecte());
         Compte compte = this.repCompte.findById(compteId)
                 .orElseThrow(() -> new EntityNotFoundException("Compte introuvable"));
 
