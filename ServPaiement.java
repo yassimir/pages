@@ -1,17 +1,17 @@
 package com.gharnata.service;
 
-import com.gharnata.entity.AffectationPaiement;
-import com.gharnata.entity.Client;
-import com.gharnata.entity.Commande;
-import com.gharnata.entity.Paiement;
+import com.gharnata.entity.*;
 import com.gharnata.enums.StatutPaiement;
 import com.gharnata.repository.RePaiement;
 import com.gharnata.repository.RepAffectationPaiement;
 import com.gharnata.repository.RepCommande;
+import com.gharnata.repository.RepCompte;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -23,13 +23,16 @@ public class ServPaiement {
     private final RePaiement rePaiement;
     private final RepAffectationPaiement repAffectationPaiement;
     private final RepCommande repCommande;
+    private final RepCompte repCompte;
 
     public ServPaiement(RePaiement rePaiement,
                         RepAffectationPaiement repAffectationPaiement,
-                        RepCommande repCommande) {
+                        RepCommande repCommande,
+                        RepCompte repCompte) {
         this.rePaiement = rePaiement;
         this.repAffectationPaiement = repAffectationPaiement;
         this.repCommande = repCommande;
+        this.repCompte = repCompte;
     }
 
     /**
@@ -37,7 +40,7 @@ public class ServPaiement {
      */
     @Transactional
     public Paiement payerCommande(Commande commande,
-                                  double montant,
+                                  BigDecimal montant,
                                   String modePaiement,
                                   String description) {
 
@@ -47,9 +50,9 @@ public class ServPaiement {
             throw new IllegalArgumentException("La commande est introuvable.");
         }
 
-        double reste = getResteAPayer(commande);
+        BigDecimal reste = getResteAPayer(commande);
 
-        if (montant > reste) {
+        if (montant.compareTo(reste) > 0) {
             throw new IllegalArgumentException(
                     "Le montant du paiement dépasse le reste à payer."
             );
@@ -79,7 +82,8 @@ public class ServPaiement {
      */
     @Transactional
     public Paiement payerCreditClient(Client client,
-                                      double montant,
+                                      BigDecimal montant,
+                                      Long compteId,
                                       String modePaiement,
                                       String description) {
 
@@ -89,9 +93,9 @@ public class ServPaiement {
             throw new IllegalArgumentException("Le client est introuvable.");
         }
 
-        double credit = calculerCreditClient(client);
+        BigDecimal credit = calculerCreditClient(client);
 
-        if (montant > credit) {
+        if (montant.compareTo(credit) > 0) {
             throw new IllegalArgumentException(
                     "Le montant dépasse le crédit restant du client."
             );
@@ -106,6 +110,14 @@ public class ServPaiement {
         paiement.setModPai(modePaiement);
         paiement.setDescription(description);
         paiement.setClient(client);
+        Compte compte = this.repCompte.findById(compteId)
+                .orElseThrow(() -> new EntityNotFoundException("Compte introuvable"));
+
+        if (!compte.getActif()) {
+            throw new IllegalStateException("Ce compte est désactivé.");
+        }
+
+        paiement.setCompte(compte);
 
         paiement = rePaiement.save(paiement);
 
@@ -115,7 +127,7 @@ public class ServPaiement {
         return paiement;
     }
     /*public Paiement payerCreditClient(Client client,
-                                      double montant,
+                                      BigDecimal montant,
                                       String modePaiement,
                                       String description) {
 
@@ -125,7 +137,7 @@ public class ServPaiement {
             throw new IllegalArgumentException("Le client est introuvable.");
         }
 
-        double credit = calculerCreditClient(client);
+        BigDecimal credit = calculerCreditClient(client);
 
         if (montant > credit) {
             throw new IllegalArgumentException(
@@ -152,7 +164,7 @@ public class ServPaiement {
     @Transactional
     public AffectationPaiement affecterPaiement(Paiement paiement,
                                                 Commande commande,
-                                                double montant) {
+                                                BigDecimal montant) {
 
         verifierMontant(montant);
 
@@ -179,18 +191,18 @@ public class ServPaiement {
             );
         }
 
-        double montantDejaAffecte =
-                getMontantAffecte(paiement);
+        BigDecimal montantDejaAffecte = getMontantAffecte(paiement);
 
-        if (montantDejaAffecte + montant > paiement.getMontant()) {
+        if (montantDejaAffecte.add(montant)
+                .compareTo(paiement.getMontant()) > 0) {
             throw new IllegalArgumentException(
                     "Le montant affecté dépasse le montant du paiement."
             );
         }
 
-        double resteCommande = getResteAPayer(commande);
+        BigDecimal resteCommande = getResteAPayer(commande);
 
-        if (montant > resteCommande) {
+        if (montant.compareTo(resteCommande) > 0) {
             throw new IllegalArgumentException(
                     "Le montant affecté dépasse le reste à payer de la commande."
             );
@@ -215,23 +227,22 @@ public class ServPaiement {
         List<Commande> commandes =
                 repCommande.findAllByClientOrderByIdAsc(client);
 
-        double restePaiement =
-                paiement.getMontant() - getMontantAffecte(paiement);
+        BigDecimal restePaiement = paiement.getMontant()
+                .subtract(getMontantAffecte(paiement));
 
         for (Commande commande : commandes) {
 
-            if (restePaiement <= 0) {
+            if (restePaiement.compareTo(BigDecimal.ZERO) <= 0) {
                 break;
             }
 
-            double resteCommande = getResteAPayer(commande);
+            BigDecimal resteCommande = getResteAPayer(commande);
 
-            if (resteCommande <= 0) {
+            if (resteCommande.compareTo(BigDecimal.ZERO) <= 0) {
                 continue;
             }
 
-            double montantAffectation =
-                    Math.min(restePaiement, resteCommande);
+            BigDecimal montantAffectation = restePaiement.min(resteCommande);
 
             AffectationPaiement affectation = new AffectationPaiement();
 
@@ -243,81 +254,85 @@ public class ServPaiement {
 
             mettreAJourStatutPaiement(commande);
 
-            restePaiement -= montantAffectation;
+            restePaiement = restePaiement.subtract(montantAffectation);
         }
     }
 
     /**
      * Retourne le montant directement payé sur une commande.
      */
-    public double getMontantPayeDirect(Commande commande) {
+    public BigDecimal getMontantPayeDirect(Commande commande) {
 
         if (commande == null) {
-            return 0;
+            return BigDecimal.valueOf(0);
         }
 
         return rePaiement
                 .findAllByCommandeOrderByIdDesc(commande)
                 .stream()
-                .mapToDouble(Paiement::getMontant)
-                .sum();
+                .map(Paiement::getMontant)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
     }
 
     /**
      * Retourne le montant provenant des paiements globaux
      * affectés à cette commande.
      */
-    public double getMontantAffecte(Commande commande) {
+    public BigDecimal getMontantAffecte(Commande commande) {
 
         if (commande == null) {
-            return 0;
+            return BigDecimal.valueOf(0);
         }
 
         return repAffectationPaiement
                 .findAllByCommande(commande)
                 .stream()
-                .mapToDouble(AffectationPaiement::getMontant)
-                .sum();
+                .map(AffectationPaiement::getMontant)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     /**
      * Retourne le montant total payé pour une commande.
      */
-    public double getMontantPaye(Commande commande) {
+    public BigDecimal getMontantPaye(Commande commande) {
 
-        return getMontantPayeDirect(commande)
-                + getMontantAffecte(commande);
+        return getMontantPayeDirect(commande).add(getMontantAffecte(commande));
     }
 
     /**
      * Retourne le reste à payer d'une commande.
      */
-    public double getResteAPayer(Commande commande) {
+    public BigDecimal getResteAPayer(Commande commande) {
 
         if (commande == null) {
-            return 0;
+            return BigDecimal.valueOf(0);
         }
 
-        double reste =
-                commande.getMontantTTC() - getMontantPaye(commande);
+        BigDecimal reste = commande.getMontantHT()
+                .subtract(getMontantPaye(commande));
 
-        return Math.max(0, reste);
+        return reste.max(BigDecimal.ZERO);
     }
 
     /**
      * Calcule le crédit global restant du client.
      */
-    public double calculerCreditClient(Client client) {
+    public BigDecimal calculerCreditClient(Client client) {
 
         if (client == null) {
-            return 0;
+            return BigDecimal.valueOf(0);
         }
 
         return repCommande
                 .findAllByClientOrderByIdDesc(client)
                 .stream()
-                .mapToDouble(this::getResteAPayer)
-                .sum();
+                .map(this::getResteAPayer)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
     }
 
     /**
@@ -330,14 +345,14 @@ public class ServPaiement {
             return;
         }
 
-        double paye = getMontantPaye(commande);
-        double ttc = commande.getMontantTTC();
+        BigDecimal paye = getMontantPaye(commande);
+        BigDecimal ttc = commande.getMontantTTC();
 
-        if (paye <= 0) {
+        if (paye.compareTo(BigDecimal.ZERO) <= 0) {
             commande.setStatutPaiement(
                     StatutPaiement.NON_PAYEE
             );
-        } else if (paye < ttc) {
+        } else if (paye.compareTo(ttc) < 0) {
             commande.setStatutPaiement(
                     StatutPaiement.PARTIELLEMENT_PAYEE
             );
@@ -381,22 +396,24 @@ public class ServPaiement {
     /**
      * Retourne le montant déjà affecté d'un paiement global.
      */
-    public double getMontantAffecte(Paiement paiement) {
+    public BigDecimal getMontantAffecte(Paiement paiement) {
 
         if (paiement == null) {
-            return 0;
+            return BigDecimal.valueOf(0);
         }
 
         return repAffectationPaiement
                 .findAllByPaiement(paiement)
                 .stream()
-                .mapToDouble(AffectationPaiement::getMontant)
-                .sum();
+                .map(AffectationPaiement::getMontant)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
     }
 
-    private void verifierMontant(double montant) {
+    private void verifierMontant(BigDecimal montant) {
 
-        if (montant <= 0) {
+        if (montant == null || montant.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException(
                     "Le montant doit être supérieur à zéro."
             );

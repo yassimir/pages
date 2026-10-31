@@ -8,13 +8,18 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
 
 
 @Controller
 @RequestMapping("/gharnata")
 public class PaymentController {
+
+    private static final Set<String> MODES_PAIEMENT =
+            Set.of("Virement", "Chèque", "Espèces", "Effet");
+
 
     private final ServClient servClient;
     private final ServPaiement servPaiement;
@@ -22,6 +27,7 @@ public class PaymentController {
     private final ServProduit servProduit;
     private final ServFacture servFacture;
     private final ServCommande servCommande;
+    private final ServCompte servCompte;
 
     public PaymentController(
             ServClient servClient,
@@ -29,7 +35,8 @@ public class PaymentController {
             ServNotification servNotification,
             ServProduit servProduit,
             ServFacture servFacture,
-            ServCommande servCommande) {
+            ServCommande servCommande,
+            ServCompte servCompte) {
 
         this.servClient = servClient;
         this.servPaiement = servPaiement;
@@ -37,6 +44,13 @@ public class PaymentController {
         this.servProduit = servProduit;
         this.servFacture = servFacture;
         this.servCommande = servCommande;
+        this.servCompte = servCompte;
+    }
+
+    @GetMapping("/show-payments")
+    public String showPayments(Model model) {
+        model.addAttribute("notif", servNotification.nbNotif());
+        return "gest/paymentManagement";
     }
 
     @GetMapping("/paiements/{id}")
@@ -45,6 +59,7 @@ public class PaymentController {
             @PathVariable Long id) {
 
         Client client = servClient.getClientById(id);
+        BigDecimal credit = servPaiement.calculerCreditClient(client);
 
         if (client == null) {
             throw new IllegalArgumentException("Client introuvable.");
@@ -54,143 +69,70 @@ public class PaymentController {
                 servPaiement.getPaymentsByClient(client);
 
         model.addAttribute("client", client);
+        model.addAttribute("clients", this.servClient.getAllClients());
         model.addAttribute("payments", paiements);
         model.addAttribute("notif", servNotification.nbNotif());
         model.addAttribute("cats", servProduit.getAllCats());
+        model.addAttribute("credit", credit);
+        model.addAttribute("comptes", servCompte.getComptesActives());
 
-        return "gest/showPayments";
+        return "gest/showClientPayments";
     }
 
-    /**
+    /*
      * Paiement global du crédit d'un client.
      *
      * Le paiement n'est associé directement à aucune commande.
      * Il pourra ensuite être affecté à une ou plusieurs commandes.
      */
+
     @PostMapping("/payment")
-    public String payment(
-            @RequestParam("montant") double montant,
-            @RequestParam("idC") long idC,
-            @RequestParam("modPai") String modePaiement,
-            RedirectAttributes attributes) {
+    public String payment(@RequestParam("montant") BigDecimal montant,
+                          @RequestParam("idC") long idC,
+                          @RequestParam("compteId") Long compteId,
+                          @RequestParam("modPai") String modePaiement,
+                          @RequestParam("pInfo") String pInfo,
+                          RedirectAttributes attributes) {
 
         Client client = servClient.getClientById(idC);
-
         if (client == null) {
+            attributes.addFlashAttribute("error", "Client introuvable.");
+            return "redirect:/gharnata/list-clients";
+        }
+
+        String retour = "redirect:/gharnata/client-details/" + client.getId();
+
+        if (montant == null || montant.compareTo(BigDecimal.ZERO) <= 0) {
             attributes.addFlashAttribute(
                     "error",
-                    "Client introuvable."
+                    "Le montant doit être supérieur à zéro."
             );
-
-            return "redirect:/gharnata/client-details/" + idC;
+            return retour;
         }
+        if (!MODES_PAIEMENT.contains(modePaiement)) {
+            attributes.addFlashAttribute("error", "Mode de paiement invalide.");
+            return retour;
+        }
+        if (pInfo != null && pInfo.length() > 150) {
+            attributes.addFlashAttribute("error", "Les détails du paiement sont trop longs (150 caractères maximum).");
+            return retour;
+        }
+        String mdP = modePaiement + ((pInfo == null || pInfo.isBlank()) ? "" : " - " + pInfo.trim());;
+        String description = "Paiement global - " + mdP;
 
         try {
-
-            Paiement paiement = servPaiement.payerCreditClient(
-                    client,
-                    montant,
-                    modePaiement,
-                    "Paiement global d'un montant de : " + montant
-            );
-
-            /*
-             * Le paiement est automatiquement affecté aux commandes
-             * les plus anciennes, jusqu'à épuisement du montant.
-             * L'affectation est réalisée dans ServPaiement.
-             */
-
-            attributes.addFlashAttribute(
-                    "success",
-                    "Paiement enregistré avec succès."
-            );
-
+            servPaiement.payerCreditClient(client, montant,compteId, mdP, description);
+            attributes.addFlashAttribute("success", "Paiement enregistré avec succès.");
         } catch (IllegalArgumentException | IllegalStateException e) {
-
-            attributes.addFlashAttribute(
-                    "error",
-                    e.getMessage()
-            );
+            attributes.addFlashAttribute("error", e.getMessage());
         }
-
-        return "redirect:/gharnata/client-details/" + client.getId();
+        return retour;
     }
-
-    /**
-     * Paiement direct d'une commande.
-     */
-    /*@PostMapping("/pay-cmd")
-    public String paycmd(
-            @RequestParam("mt") double montant,
-            @RequestParam("id") long idCommande,
-            @RequestParam("client_id") Long clientId,
-            HttpServletResponse response,
-            @RequestParam(value = "tmp", required = false) String tmp,
-            @RequestParam("pInfo") String modePaiement,
-            RedirectAttributes attributes) throws Exception {
-
-        Commande commande = servCommande.findCommandById(idCommande);
-
-        if (commande == null) {
-            attributes.addFlashAttribute(
-                    "message",
-                    "Commande introuvable."
-            );
-
-            return "redirect:/gharnata/client-details/" + clientId;
-        }
-
-        try {
-
-            if (commande.getClient() == null
-                    || !commande.getClient().getId().equals(clientId)) {
-
-                throw new IllegalArgumentException(
-                        "La commande n'appartient pas à ce client."
-                );
-            }
-
-            Paiement paiement = servPaiement.payerCommande(
-                    commande,
-                    montant,
-                    modePaiement,
-                    "Paiement de la commande n°"
-                            + commande.getId()
-                            + " - "
-                            + commande.getClient().getSte()
-            );
-
-            Facture facture = servFacture.creeFacture(paiement);
-
-            servFacture.persFactItems(
-                    facture,
-                    commande
-            );
-
-            servFacture.genererFacture(
-                    facture,
-                    tmp,
-                    response
-            );
-
-            return null;
-
-        } catch (IllegalArgumentException | IllegalStateException e) {
-
-            attributes.addFlashAttribute(
-                    "message",
-                    e.getMessage()
-            );
-
-            return "redirect:/gharnata/command-details/"
-                    + commande.getId();
-        }
-    }*/
 
 
     @PostMapping("/pay-cmd")
     public String paycmd(
-            @RequestParam("mt") double montant,
+            @RequestParam("mt") BigDecimal montant,
             @RequestParam("id") long idCommande,
             @RequestParam("client_id") Long clientId,
             @RequestParam("pInfo") String modePaiement,
@@ -233,58 +175,41 @@ public class PaymentController {
         }
     }
 
-    @GetMapping("/paiements/{id}/facture")
-    public String genererFacturePaiement(
-            @PathVariable Long id,
-            HttpServletResponse response,
-            RedirectAttributes attributes) throws Exception {
-        System.out.println("here1");
+
+    @PostMapping("/paiements/{id}/facture")   // POST : la facture est créée en base
+    public String genererFacturePaiement(@PathVariable Long id,
+                                         @RequestParam(value = "categories", required = false) List<Long> categories,
+                                         @RequestParam(value = "tmp", required = false) String tmp,
+                                         HttpServletResponse response,
+                                         RedirectAttributes attributes) throws Exception {
         Paiement paiement = servPaiement.getPaiementById(id);
-        System.out.println("here2");
         if (paiement == null) {
-            System.out.println("here3");
-            attributes.addFlashAttribute(
-                    "error", "Paiement introuvable."
-            );
+            attributes.addFlashAttribute("error", "Paiement introuvable.");
             return "redirect:/gharnata/list-clients";
         }
+        String retour = "redirect:/gharnata/paiements/" + paiement.getClient().getId();
 
         if (paiement.getFacture() != null) {
-            System.out.println("here4");
-            attributes.addFlashAttribute(
-                    "error", "Une facture existe déjà pour ce paiement."
-            );
-            return "redirect:/gharnata/paiements/"
-                    + paiement.getClient().getId();
-        }
-        System.out.println("here5");
-        Commande commande = paiement.getCommande();
-        System.out.println("here6");
-        if (commande == null) {
-            System.out.println("here7");
-            attributes.addFlashAttribute(
-                    "error",
-                    "Ce paiement global nécessite de sélectionner les catégories "
-                            + "de produits pour composer la facture."
-            );
-            return "redirect:/gharnata/paiements/"
-                    + paiement.getClient().getId();
+            attributes.addFlashAttribute("error", "Une facture existe déjà pour ce paiement.");
+            return retour;
         }
 
         try {
-            System.out.println("here8");
-            Facture facture = servFacture.creerFactureDepuisCommande(paiement, commande);
-            System.out.println("here9");
-            servFacture.genererFacture(facture, null, response);
-            System.out.println("here10");
+            Facture facture;
+            if (paiement.getCommande() != null) {
+                facture = servFacture.creerFactureDepuisCommande(paiement, paiement.getCommande());
+            } else {
+                if (categories == null || categories.isEmpty()) {
+                    attributes.addFlashAttribute("error", "Sélectionnez au moins une catégorie.");
+                    return retour;
+                }
+                facture = servFacture.creerFactureGlobale(paiement, categories); // à écrire selon ta réponse
+            }
+            servFacture.genererFacture(facture, tmp, response);
             return null;
-
         } catch (IllegalArgumentException | IllegalStateException e) {
-            System.out.println("here11");
             attributes.addFlashAttribute("error", e.getMessage());
-
-            return "redirect:/gharnata/paiements/"
-                    + paiement.getClient().getId();
+            return retour;
         }
     }
 }
