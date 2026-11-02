@@ -4,10 +4,12 @@ import com.gharnata.entity.Categorie;
 import com.gharnata.entity.PanierItems;
 import com.gharnata.entity.Produit;
 import com.gharnata.entity.dto.ProductDTO;
+import com.gharnata.repository.RepImage;
 import com.gharnata.service.ServImage;
 import com.gharnata.service.ServNotification;
 import com.gharnata.service.ServPanier;
 import com.gharnata.service.ServProduit;
+import com.gharnata.storage.StorageService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -15,6 +17,15 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.gharnata.entity.Image;
+import com.gharnata.storage.StorageException;
+
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -27,13 +38,69 @@ public class ProduitController {
     private final ServImage servImage;
     private final ServNotification servNotification;
     private final ServPanier servPanier;
+    private final RepImage repImage;
+    private final StorageService storageService;
 
     public ProduitController(ServProduit servProduit, ServImage servImage, ServNotification servNotification,
-                             ServPanier servPanier) {
+                             ServPanier servPanier, RepImage repImage, StorageService storageService) {
         this.servProduit = servProduit;
         this.servImage = servImage;
         this.servNotification = servNotification;
         this.servPanier = servPanier;
+        this.repImage = repImage;
+        this.storageService = storageService;
+    }
+
+    @GetMapping("/images/{id}")
+    @ResponseBody
+    public ResponseEntity<Resource> afficherImage(@PathVariable Long id) {
+
+        Image image = repImage.findById(id).orElse(null);
+
+        if (image == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        try {
+            Resource resource;
+
+            // Nouvelle méthode : stockage physique
+            if (image.getCheminFichier() != null
+                    && !image.getCheminFichier().isBlank()) {
+
+                resource = storageService.load(
+                        image.getCheminFichier()
+                );
+
+            }
+            // Compatibilité temporaire avec les anciens BLOB
+            else if (image.getData() != null
+                    && image.getData().length > 0) {
+
+                resource = new ByteArrayResource(image.getData());
+
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+
+            MediaType mediaType = MediaType.parseMediaType(
+                    image.getTypeMime() != null
+                            ? image.getTypeMime()
+                            : MediaType.APPLICATION_OCTET_STREAM_VALUE
+            );
+
+            return ResponseEntity.ok()
+                    .contentType(mediaType)
+                    .cacheControl(CacheControl.noCache().cachePrivate())
+                    .header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "inline; filename=\"image\""
+                    )
+                    .body(resource);
+
+        } catch (StorageException | IllegalArgumentException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     @GetMapping("/add-product")
@@ -88,7 +155,6 @@ public class ProduitController {
             lP = this.servProduit.getProductsLimit();
         }
         model.addAttribute("products", lP);
-        model.addAttribute("imageDatas", this.servImage.encodeImages(lP));
         model.addAttribute("prods", this.servProduit.getProductDTOs());
         model.addAttribute("notif", servNotification.nbNotif());
         model.addAttribute("cats", this.servProduit.getAllCats());
@@ -125,7 +191,6 @@ public class ProduitController {
     public String showOneProduct(@PathVariable Long id, Model model){
         Produit p = this.servProduit.getProductById(id);
         model.addAttribute("product", p);
-        model.addAttribute("imageData", Base64.getEncoder().encodeToString(p.getPic().getData()));
         model.addAttribute("notif",servNotification.nbNotif());
         model.addAttribute("cats", this.servProduit.getAllCats());
         return "gest/productDetails";

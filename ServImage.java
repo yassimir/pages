@@ -1,12 +1,19 @@
 package com.gharnata.service;
 
-import com.gharnata.compenents.ResourceUtils;
 import com.gharnata.entity.Image;
 import com.gharnata.entity.Produit;
 import com.gharnata.repository.RepImage;
+import com.gharnata.storage.StorageException;
+import com.gharnata.storage.StorageService;
+
 import org.imgscalr.Scalr;
-import org.springframework.beans.factory.annotation.Autowired;
+
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.imageio.IIOImage;
@@ -14,122 +21,223 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-import java.awt.*;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+
+import java.io.FilterOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.InputStream;
+import java.io.OutputStream;
+
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class ServImage {
+
+    private static final int MAX_WIDTH = 1200;
+    private static final int MAX_HEIGHT = 1200;
+
+    private static final float JPEG_QUALITY = 0.85f;
+
+    private static final String DOSSIER = "produits";
+    private static final String TYPE_MIME = "image/jpeg";
+
+    private static final String IMAGE_DEFAUT =
+            "static/images/defaut.JPEG";
+
     private final RepImage repImage;
+    private final StorageService storageService;
 
-    // Taille maximale souhaitée : 300 Ko
-    private static final int MAX_SIZE_KB = 300;
-    private static final int MAX_SIZE_BYTES = MAX_SIZE_KB * 1024;
+    public ServImage(
+            RepImage repImage,
+            StorageService storageService) {
 
-    // Dimension maximale
-    private static final int MAX_WIDTH = 800;
-    private static final int MAX_HEIGHT = 800;
-
-    public ServImage(RepImage repImage) {
         this.repImage = repImage;
+        this.storageService = storageService;
     }
 
-    public Image treatPic(MultipartFile imagee) throws Exception {
+    /**
+     * Enregistre une nouvelle image de produit.
+     * Si aucune image n'est fournie, utilise l'image par défaut.
+     */
+    @Transactional
+    public Image treatPic(MultipartFile fichier) {
 
-        Image image = new Image();
+        if (fichier == null || fichier.isEmpty()) {
 
-        // Aucune image
-        if (imagee == null || imagee.isEmpty()) {
+            Image image = new Image();
 
-            System.out.println("Aucune image -> image par défaut");
-
-            byte[] dt = ResourceUtils.load("static/images/defaut.JPEG");
-            image.setData(dt);
-
-            return repImage.save(image);
-        }
-
-        // Image reçue
-        byte[] originalData = imagee.getBytes();
-
-        System.out.println("Image originale : "
-                + originalData.length / 1024 + " KB");
-
-        // Si <= 300 KB : on garde l'originale
-        if (originalData.length <= 300 * 1024) {
-
-            System.out.println("Image <= 300 KB -> originale");
-
-            image.setData(originalData);
+            image.setCheminFichier("produits/defaut.jpg");
+            image.setTypeMime("image/jpeg");
+            image.setNomOriginal("defaut.jpg");
 
             return repImage.save(image);
         }
 
-        // Image > 300 KB
-        System.out.println("Image > 300 KB -> compression");
+        BufferedImage original;
 
-        BufferedImage original = ImageIO.read(
-                new ByteArrayInputStream(originalData)
-        );
+        try (InputStream input = fichier.getInputStream()) {
+            original = ImageIO.read(input);
+
+        } catch (IOException e) {
+            throw new StorageException(
+                    "Impossible de lire l'image du produit.",
+                    e
+            );
+        }
 
         if (original == null) {
-            System.out.println("Image illisible -> image par défaut");
+            throw new StorageException(
+                    "Le fichier fourni n'est pas une image valide."
+            );
+        }
 
-            byte[] dt = ResourceUtils.load("static/images/defaut.JPEG");
-            image.setData(dt);
+        String nomOriginal = nettoyerNomOriginal(
+                fichier.getOriginalFilename()
+        );
 
+        return enregistrerImage(original, nomOriginal, null);
+    }
+
+    /**
+     * Remplace l'image d'un produit existant.
+     * L'ancienne image physique est supprimée uniquement
+     * après validation de la transaction.
+     */
+    @Transactional
+    public void modifyPic(MultipartFile fichier, long id) {
+
+        if (fichier == null || fichier.isEmpty()) {
+            return;
+        }
+
+        Image image = repImage.findById(id)
+                .orElseThrow(() -> new StorageException(
+                        "Image du produit introuvable."
+                ));
+
+        BufferedImage original;
+
+        try (InputStream input = fichier.getInputStream()) {
+            original = ImageIO.read(input);
+
+        } catch (IOException e) {
+            throw new StorageException(
+                    "Impossible de lire la nouvelle image.",
+                    e
+            );
+        }
+
+        if (original == null) {
+            throw new StorageException(
+                    "Le fichier fourni n'est pas une image valide."
+            );
+        }
+
+        String ancienChemin = image.getCheminFichier();
+
+        enregistrerImage(
+                original,
+                nettoyerNomOriginal(fichier.getOriginalFilename()),
+                image
+        );
+
+        enregistrerNettoyageTransactionnel(
+                image.getCheminFichier(),
+                ancienChemin
+        );
+
+        repImage.save(image);
+    }
+
+    /**
+     * Redimensionne, compresse et enregistre l'image.
+     */
+    private Image enregistrerImage(
+            BufferedImage original,
+            String nomOriginal,
+            Image imageExistante) {
+
+        exigerTransactionActive();
+
+        BufferedImage redimensionnee = redimensionner(original);
+
+        AtomicLong taille = new AtomicLong();
+
+        String chemin = storageService.store(
+                DOSSIER,
+                TYPE_MIME,
+                output -> {
+
+                    CountingOutputStream countingOutput =
+                            new CountingOutputStream(output);
+
+                    compresserJPEG(
+                            redimensionnee,
+                            countingOutput
+                    );
+
+                    countingOutput.flush();
+
+                    taille.set(countingOutput.getCount());
+                }
+        );
+
+        // En cas de rollback, le nouveau fichier sera supprimé.
+        enregistrerNettoyageTransactionnel(chemin, null);
+
+        Image image = imageExistante != null
+                ? imageExistante
+                : new Image();
+
+        image.setCheminFichier(chemin);
+        image.setTypeMime(TYPE_MIME);
+        image.setNomOriginal(nomOriginal);
+        image.setTaille(taille.get());
+
+        if (imageExistante == null) {
             return repImage.save(image);
         }
 
-        // Redimensionnement maximum 800x800
-        BufferedImage resized = Scalr.resize(
+        return image;
+    }
+
+    /**
+     * Réduit les dimensions uniquement si elles dépassent 1200 px.
+     * Les proportions sont conservées.
+     */
+    private BufferedImage redimensionner(BufferedImage original) {
+
+        if (original.getWidth() <= MAX_WIDTH
+                && original.getHeight() <= MAX_HEIGHT) {
+
+            return original;
+        }
+
+        return Scalr.resize(
                 original,
                 Scalr.Method.QUALITY,
                 Scalr.Mode.AUTOMATIC,
-                800,
-                800
+                MAX_WIDTH,
+                MAX_HEIGHT
         );
-
-        // Compression JPEG
-        byte[] compressedData = compressJPEG(resized, 0.80f);
-
-        System.out.println("Après compression : "
-                + compressedData.length / 1024 + " KB");
-
-        // Si encore trop grande, on diminue progressivement la qualité
-        float quality = 0.75f;
-
-        while (compressedData.length > 300 * 1024 && quality >= 0.30f) {
-
-            compressedData = compressJPEG(resized, quality);
-
-            System.out.println(
-                    "Qualité : " + quality +
-                            " -> " + compressedData.length / 1024 + " KB"
-            );
-
-            quality -= 0.05f;
-        }
-
-        image.setData(compressedData);
-
-        return repImage.save(image);
     }
-    //Compression JPEG avec qualité configurable
 
-    private byte[] compressJPEG(BufferedImage original, float quality)
-            throws IOException {
+    /**
+     * Convertit l'image en JPEG avec une qualité de 85 %.
+     * Les zones transparentes sont remplacées par un fond blanc.
+     */
+    private void compresserJPEG(
+            BufferedImage original,
+            OutputStream output) throws IOException {
 
-        // Créer une image RGB compatible JPEG
         BufferedImage rgbImage = new BufferedImage(
                 original.getWidth(),
                 original.getHeight(),
@@ -138,154 +246,191 @@ public class ServImage {
 
         Graphics2D graphics = rgbImage.createGraphics();
 
-        // Fond blanc pour les images avec transparence
-        graphics.setColor(Color.WHITE);
-        graphics.fillRect(
-                0,
-                0,
-                original.getWidth(),
-                original.getHeight()
-        );
+        try {
+            graphics.setColor(Color.WHITE);
 
-        graphics.drawImage(original, 0, 0, null);
-        graphics.dispose();
+            graphics.fillRect(
+                    0,
+                    0,
+                    original.getWidth(),
+                    original.getHeight()
+            );
 
-        ByteArrayOutputStream outputStream =
-                new ByteArrayOutputStream();
+            graphics.setRenderingHint(
+                    RenderingHints.KEY_INTERPOLATION,
+                    RenderingHints.VALUE_INTERPOLATION_BICUBIC
+            );
+
+            graphics.drawImage(original, 0, 0, null);
+
+        } finally {
+            graphics.dispose();
+        }
 
         Iterator<ImageWriter> writers =
                 ImageIO.getImageWritersByFormatName("jpg");
 
         if (!writers.hasNext()) {
-            throw new IOException("Aucun JPEG writer disponible");
+            throw new IOException(
+                    "Aucun encodeur JPEG disponible."
+            );
         }
 
         ImageWriter writer = writers.next();
 
-        ImageWriteParam param =
-                writer.getDefaultWriteParam();
+        try {
+            ImageWriteParam param =
+                    writer.getDefaultWriteParam();
 
-        param.setCompressionMode(
-                ImageWriteParam.MODE_EXPLICIT
-        );
-
-        param.setCompressionQuality(quality);
-
-        try (ImageOutputStream imageOutputStream =
-                     ImageIO.createImageOutputStream(outputStream)) {
-
-            writer.setOutput(imageOutputStream);
-
-            writer.write(
-                    null,
-                    new IIOImage(rgbImage, null, null),
-                    param
+            param.setCompressionMode(
+                    ImageWriteParam.MODE_EXPLICIT
             );
+
+            param.setCompressionQuality(JPEG_QUALITY);
+
+            ImageOutputStream imageOutput =
+                    ImageIO.createImageOutputStream(output);
+
+            if (imageOutput == null) {
+                throw new IOException(
+                        "Impossible de créer le flux JPEG."
+                );
+            }
+
+            try (imageOutput) {
+
+                writer.setOutput(imageOutput);
+
+                writer.write(
+                        null,
+                        new IIOImage(rgbImage, null, null),
+                        param
+                );
+
+                imageOutput.flush();
+            }
 
         } finally {
             writer.dispose();
         }
-
-        return outputStream.toByteArray();
     }
-   public void modifyPic(MultipartFile image, long id) {
 
-       Image img = this.repImage.findById(id).orElse(new Image());
+    /**
+     * Vérifie que la méthode est exécutée dans une transaction.
+     */
+    private void exigerTransactionActive() {
 
-       // Aucune nouvelle image sélectionnée
-       if (image == null || image.isEmpty()) {
-           System.out.println("Aucune nouvelle image -> conservation de l'ancienne");
-           return;
-       }
-
-       try {
-
-           // Image originale
-           byte[] originalData = image.getBytes();
-
-           System.out.println("Nouvelle image : "
-                   + originalData.length / 1024 + " KB");
-
-           byte[] finalData;
-
-           // Si <= 300 KB : garder l'originale
-           if (originalData.length <= 300 * 1024) {
-
-               System.out.println("Image <= 300 KB -> originale");
-
-               finalData = originalData;
-
-           } else {
-
-               System.out.println("Image > 300 KB -> compression");
-
-               BufferedImage original = ImageIO.read(
-                       new ByteArrayInputStream(originalData)
-               );
-
-               if (original == null) {
-                   System.out.println("Image illisible -> aucune modification");
-                   return;
-               }
-
-               // Redimensionnement maximum 800x800
-               BufferedImage resized = Scalr.resize(
-                       original,
-                       Scalr.Method.QUALITY,
-                       Scalr.Mode.AUTOMATIC,
-                       800,
-                       800
-               );
-
-               // Première compression
-               finalData = compressJPEG(resized, 0.80f);
-
-               System.out.println("Après compression : "
-                       + finalData.length / 1024 + " KB");
-
-               // Réduction progressive de la qualité
-               float quality = 0.75f;
-
-               while (finalData.length > 300 * 1024
-                       && quality >= 0.30f) {
-
-                   finalData = compressJPEG(resized, quality);
-
-                   System.out.println(
-                           "Qualité : " + quality
-                                   + " -> "
-                                   + finalData.length / 1024
-                                   + " KB"
-                   );
-
-                   quality -= 0.05f;
-               }
-           }
-
-           // Remplacer l'ancienne image
-           img.setData(finalData);
-
-           repImage.save(img);
-
-           System.out.println("Image modifiée avec succès.");
-
-       } catch (IOException e) {
-
-           System.out.println("Erreur lors du traitement de l'image :");
-           e.printStackTrace();
-       }
-   }
-
-    public java.util.List<String> encodeImages(java.util.List<Produit> produits) {
-        List<String> images = new ArrayList<>();
-        for (Produit p : produits) {
-            if (p.getPic() != null && p.getPic().getData() != null) {
-                images.add(Base64.getEncoder().encodeToString(p.getPic().getData()));
-            } else {
-                images.add(""); // ou une image par défaut en base64, selon ce que ton template attend
-            }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            throw new IllegalStateException(
+                    "L'enregistrement de l'image nécessite une transaction."
+            );
         }
-        return images;
     }
 
+    /**
+     * Nettoyage des fichiers selon le résultat de la transaction.
+     *
+     * Rollback : suppression du nouveau fichier.
+     * Commit : suppression éventuelle de l'ancien fichier.
+     */
+    private void enregistrerNettoyageTransactionnel(
+            String nouveauChemin,
+            String ancienChemin) {
+
+        exigerTransactionActive();
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCompletion(int status) {
+
+                        if (status == STATUS_ROLLED_BACK) {
+
+                            supprimerSilencieusement(nouveauChemin);
+
+                        } else if (status == STATUS_COMMITTED
+                                && ancienChemin != null
+                                && !ancienChemin.isBlank()) {
+
+                            supprimerSilencieusement(ancienChemin);
+                        }
+                    }
+                }
+        );
+    }
+
+    private void supprimerSilencieusement(String chemin) {
+
+        if (chemin == null
+                || chemin.isBlank()
+                || chemin.equals("produits/defaut.jpg")) {
+            return;
+        }
+
+        try {
+            storageService.delete(chemin);
+
+        } catch (RuntimeException e) {
+            System.err.println(
+                    "Impossible de supprimer le fichier : "
+                            + chemin + " - " + e.getMessage()
+            );
+        }
+    }
+
+    /**
+     * Nettoie le nom original pour éviter de conserver un chemin.
+     */
+    private String nettoyerNomOriginal(String nom) {
+
+        if (nom == null || nom.isBlank()) {
+            return "image";
+        }
+
+        nom = nom.replace("\\", "/");
+
+        nom = nom.substring(
+                nom.lastIndexOf('/') + 1
+        ).trim();
+
+        if (nom.length() > 255) {
+            nom = nom.substring(0, 255);
+        }
+
+        return nom.isBlank() ? "image" : nom;
+    }
+
+    /**
+     * Compte les octets écrits sans conserver le contenu en mémoire.
+     */
+    private static class CountingOutputStream
+            extends FilterOutputStream {
+
+        private long count = 0;
+
+        public CountingOutputStream(OutputStream output) {
+            super(output);
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            out.write(b);
+            count++;
+        }
+
+        @Override
+        public void write(
+                byte[] bytes,
+                int offset,
+                int length) throws IOException {
+
+            out.write(bytes, offset, length);
+            count += length;
+        }
+
+        public long getCount() {
+            return count;
+        }
+    }
 }
