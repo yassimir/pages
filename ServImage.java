@@ -1,41 +1,31 @@
 package com.gharnata.service;
 
 import com.gharnata.entity.Image;
-import com.gharnata.entity.Produit;
 import com.gharnata.repository.RepImage;
 import com.gharnata.storage.StorageException;
 import com.gharnata.storage.StorageService;
 
 import org.imgscalr.Scalr;
 
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
-
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageOutputStream;
-
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -48,9 +38,6 @@ public class ServImage {
 
     private static final String DOSSIER = "produits";
     private static final String TYPE_MIME = "image/jpeg";
-
-    private static final String IMAGE_DEFAUT =
-            "static/images/defaut.JPEG";
 
     private final RepImage repImage;
     private final StorageService storageService;
@@ -103,7 +90,14 @@ public class ServImage {
                 fichier.getOriginalFilename()
         );
 
-        return enregistrerImage(original, nomOriginal, null);
+        Image image = enregistrerImage(original, nomOriginal, null);
+
+        enregistrerNettoyageTransactionnel(
+                image.getCheminFichier(),
+                null
+        );
+
+        return image;
     }
 
     /**
@@ -190,8 +184,6 @@ public class ServImage {
                 }
         );
 
-        // En cas de rollback, le nouveau fichier sera supprimé.
-        enregistrerNettoyageTransactionnel(chemin, null);
 
         Image image = imageExistante != null
                 ? imageExistante
@@ -201,6 +193,7 @@ public class ServImage {
         image.setTypeMime(TYPE_MIME);
         image.setNomOriginal(nomOriginal);
         image.setTaille(taille.get());
+        image.setData(null);
 
         if (imageExistante == null) {
             return repImage.save(image);
