@@ -1,11 +1,17 @@
 package com.gharnata.controller;
 
 import com.gharnata.entity.*;
+import com.gharnata.entity.dto.PaiementDetailsDTO;
 import com.gharnata.service.*;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.math.BigDecimal;
@@ -47,10 +53,135 @@ public class PaymentController {
         this.servCompte = servCompte;
     }
 
-    @GetMapping("/show-payments")
-    public String showPayments(Model model) {
+
+    /*@GetMapping("/show-payments")
+    public String showPayments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            Model model) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Paiement> paiements =
+                servPaiement.getPaiementsPagines(pageable);
+
+        model.addAttribute("payments", paiements);
         model.addAttribute("notif", servNotification.nbNotif());
+
         return "gest/paymentManagement";
+    }*/
+    @GetMapping("/modify-payment")
+    public String modifyPayment(Model model) {
+        model.addAttribute("notif", servNotification.nbNotif());
+        model.addAttribute("paiement", new Paiement());
+        return "gest/modifyPayment";
+    }
+    @GetMapping("/show-payments")
+    public String showPayments(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String method,
+            Model model) {
+
+        page = Math.max(page, 0);
+        size = Math.min(Math.max(size, 1), 100);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "id")
+        );
+
+        Page<Paiement> paiements = servPaiement.rechercherPaiements(
+                q, status, method, pageable
+        );
+
+        model.addAttribute("payments", paiements);
+        model.addAttribute("q", q);
+        model.addAttribute("status", status);
+        model.addAttribute("method", method);
+        model.addAttribute("notif", servNotification.nbNotif());
+
+        return "gest/paymentManagement";
+    }
+    @GetMapping("/payments/search")
+    public String rechercherPaiements(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String method,
+            Model model) {
+
+        page = Math.max(page, 0);
+        size = Math.min(Math.max(size, 1), 100);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "id")
+        );
+
+        Page<Paiement> paiements =
+                servPaiement.rechercherPaiements(
+                        q, status, method, pageable
+                );
+
+        // Éviter une page vide si le nombre de résultats diminue
+        if (paiements.getTotalPages() > 0 &&
+                page >= paiements.getTotalPages()) {
+
+            pageable = PageRequest.of(
+                    paiements.getTotalPages() - 1,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "id")
+            );
+
+            paiements = servPaiement.rechercherPaiements(
+                    q, status, method, pageable
+            );
+        }
+
+        model.addAttribute("payments", paiements);
+        model.addAttribute("q", q);
+        model.addAttribute("status", status);
+        model.addAttribute("method", method);
+
+        return "gest/paymentManagement :: paymentResults";
+    }
+    @GetMapping("/payments/{id}/details")
+    @ResponseBody
+    public PaiementDetailsDTO getPaymentDetails(@PathVariable Long id) {
+
+        Paiement paiement = servPaiement.getPaiementAvecDetails(id);
+
+        Compte compte = paiement.getCompte();
+        Image justificatif = paiement.getJustificatif();
+
+        return new PaiementDetailsDTO(
+                paiement.getId(),
+
+                paiement.getClient().getSte(),
+                paiement.getClient().getTel(),
+
+                paiement.getDatePay(),
+                paiement.getMontant(),
+                paiement.getModPai(),
+                paiement.isConfirmed(),
+
+                compte != null ? compte.getNom() : null,
+                compte != null ? compte.getType().name() : null,
+
+                justificatif != null
+                        ? "/gharnata/images/" + justificatif.getId()
+                        : null,
+
+                justificatif != null
+                        ? justificatif.getTypeMime()
+                        : null
+        );
     }
 
     @GetMapping("/paiements/{id}")
@@ -92,6 +223,7 @@ public class PaymentController {
                           @RequestParam("compteId") Long compteId,
                           @RequestParam("modPai") String modePaiement,
                           @RequestParam("pInfo") String pInfo,
+                          @RequestParam(value = "justificatif", required = false) MultipartFile justificatif,
                           RedirectAttributes attributes) {
 
         Client client = servClient.getClientById(idC);
@@ -121,7 +253,7 @@ public class PaymentController {
         String description = "Paiement global - " + mdP;
 
         try {
-            servPaiement.payerCreditClient(client, montant,compteId, mdP, description);
+            servPaiement.payerCreditClient(client, montant,compteId, mdP, description, justificatif);
             attributes.addFlashAttribute("success", "Paiement enregistré avec succès.");
         } catch (IllegalArgumentException | IllegalStateException e) {
             attributes.addFlashAttribute("error", e.getMessage());
@@ -136,6 +268,7 @@ public class PaymentController {
             @RequestParam("id") long idCommande,
             @RequestParam("client_id") Long clientId,
             @RequestParam("pInfo") String modePaiement,
+            @RequestParam(value = "justificatif", required = false) MultipartFile justificatif,
             RedirectAttributes attributes) {
 
         Commande commande = servCommande.findCommandById(idCommande);
@@ -158,7 +291,8 @@ public class PaymentController {
                     montant,
                     modePaiement,
                     "Paiement de la commande n°" + commande.getId()
-                            + " - " + commande.getClient().getSte()
+                            + " - " + commande.getClient().getSte(),
+                    justificatif
             );
 
             attributes.addFlashAttribute(
