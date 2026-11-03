@@ -67,6 +67,10 @@ public class Paiement {
     @JoinColumn(name = "utilisateur_id", nullable = false)
     private Utilisateur utilisateur;
 
+    @Column(name = "actif", nullable = false)
+    @ColumnDefault("true")
+    private boolean actif = true;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -184,5 +188,13 @@ public class Paiement {
 
     public void setJustificatif(Image justificatif) {
         this.justificatif = justificatif;
+    }
+
+    public boolean isActif() {
+        return actif;
+    }
+
+    public void setActif(boolean actif) {
+        this.actif = actif;
     }
 }
