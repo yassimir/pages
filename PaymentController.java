@@ -3,6 +3,7 @@ package com.gharnata.controller;
 import com.gharnata.entity.*;
 import com.gharnata.entity.dto.PaiementDetailsDTO;
 import com.gharnata.service.*;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -184,6 +185,37 @@ public class PaymentController {
         );
     }
 
+    @PostMapping("/payments/{id}/confirm")
+    public String confirmerPaiement(
+            @PathVariable Long id,
+            RedirectAttributes attributes) {
+
+        try {
+            servPaiement.confirmerPaiement(id);
+
+            attributes.addFlashAttribute(
+                    "success",
+                    "Le paiement #" + id + " a été confirmé avec succès."
+            );
+
+        } catch (EntityNotFoundException e) {
+
+            attributes.addFlashAttribute(
+                    "error",
+                    "Paiement introuvable."
+            );
+
+        } catch (IllegalArgumentException | IllegalStateException e) {
+
+            attributes.addFlashAttribute(
+                    "error",
+                    e.getMessage()
+            );
+        }
+
+        return "redirect:/gharnata/show-payments";
+    }
+
     @GetMapping("/paiements/{id}")
     public String showPaie(
             Model model,
@@ -254,7 +286,10 @@ public class PaymentController {
 
         try {
             servPaiement.payerCreditClient(client, montant,compteId, mdP, description, justificatif);
-            attributes.addFlashAttribute("success", "Paiement enregistré avec succès.");
+            attributes.addFlashAttribute(
+                    "success",
+                    "Paiement enregistré. Il est en attente de confirmation."
+            );
         } catch (IllegalArgumentException | IllegalStateException e) {
             attributes.addFlashAttribute("error", e.getMessage());
         }
@@ -297,7 +332,7 @@ public class PaymentController {
 
             attributes.addFlashAttribute(
                     "success",
-                    "Paiement enregistré avec succès. Aucune facture n'a été générée."
+                    "Paiement enregistré en attente de confirmation. Aucune facture n'a été générée."
             );
 
             return "redirect:/gharnata/command-details/" + commande.getId();
