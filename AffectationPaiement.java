@@ -2,6 +2,8 @@ package com.gharnata.entity;
 
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
+
 @Entity
 @Table(name = "affectation_paiement")
 public class AffectationPaiement {
@@ -19,7 +21,7 @@ public class AffectationPaiement {
     private Commande commande;
 
     @Column(name = "montant", nullable = false)
-    private double montant;
+    private BigDecimal montant;
 
     public Long getId() {
         return id;
@@ -45,11 +47,11 @@ public class AffectationPaiement {
         this.commande = commande;
     }
 
-    public double getMontant() {
+    public BigDecimal getMontant() {
         return montant;
     }
 
-    public void setMontant(double montant) {
+    public void setMontant(BigDecimal montant) {
         this.montant = montant;
     }
 }
