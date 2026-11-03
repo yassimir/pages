@@ -318,13 +318,19 @@ public class ServPaiement {
         paiement.setDescription(description);
         paiement.setCommande(commande);
         paiement.setClient(commande.getClient());
-        paiement.setUtilisateur(this.utilisateurConnecteService.getUtilisateurConnecte());
+        paiement.setUtilisateur(
+                utilisateurConnecteService.getUtilisateurConnecte()
+        );
+
+        // Nouveau paiement : actif mais en attente de confirmation
+        paiement.setActif(true);
+        paiement.setConfirmed(false);
 
         paiement = rePaiement.save(paiement);
 
-        mettreAJourStatutPaiement(commande);
+        // Aucun changement du statut de la commande ici.
+        // Aucune affectation financière avant confirmation.
 
-        // Enregistrement facultatif du justificatif
         enregistrerJustificatif(paiement, justificatif);
 
         return paiement;
@@ -356,6 +362,15 @@ public class ServPaiement {
             );
         }
 
+        Compte compte = this.repCompte.findById(compteId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Compte introuvable")
+                );
+
+        if (!compte.getActif()) {
+            throw new IllegalStateException("Ce compte est désactivé.");
+        }
+
         Paiement paiement = new Paiement();
 
         paiement.setMontant(montant);
@@ -365,22 +380,19 @@ public class ServPaiement {
         paiement.setModPai(modePaiement);
         paiement.setDescription(description);
         paiement.setClient(client);
-        paiement.setUtilisateur(this.utilisateurConnecteService.getUtilisateurConnecte());
-        Compte compte = this.repCompte.findById(compteId)
-                .orElseThrow(() -> new EntityNotFoundException("Compte introuvable"));
-
-        if (!compte.getActif()) {
-            throw new IllegalStateException("Ce compte est désactivé.");
-        }
-
+        paiement.setUtilisateur(
+                utilisateurConnecteService.getUtilisateurConnecte()
+        );
         paiement.setCompte(compte);
+
+        // Nouveau paiement : actif mais en attente de confirmation
+        paiement.setActif(true);
+        paiement.setConfirmed(false);
 
         paiement = rePaiement.save(paiement);
 
-        // Affectation automatique aux commandes les plus anciennes
-        affecterAutomatiquement(paiement, client);
+        // Pas d'affectation automatique avant confirmation.
 
-        // Enregistrement facultatif du justificatif
         enregistrerJustificatif(paiement, justificatif);
 
         return paiement;
@@ -429,6 +441,11 @@ public class ServPaiement {
 
         if (paiement == null) {
             throw new IllegalArgumentException("Le paiement est introuvable.");
+        }
+        if (!paiement.isActif() || !paiement.isConfirmed()) {
+            throw new IllegalStateException(
+                    "Impossible d'affecter un paiement non confirmé ou inactif."
+            );
         }
 
         if (commande == null) {
@@ -483,6 +500,12 @@ public class ServPaiement {
     @Transactional
     public void affecterAutomatiquement(Paiement paiement, Client client) {
 
+        if (!paiement.isActif() || !paiement.isConfirmed()) {
+            throw new IllegalStateException(
+                    "Impossible d'affecter un paiement non confirmé ou inactif."
+            );
+        }
+
         List<Commande> commandes =
                 repCommande.findAllByClientOrderByIdAsc(client);
 
@@ -523,12 +546,13 @@ public class ServPaiement {
     public BigDecimal getMontantPayeDirect(Commande commande) {
 
         if (commande == null) {
-            return BigDecimal.valueOf(0);
+            return BigDecimal.ZERO;
         }
 
         return rePaiement
                 .findAllByCommandeOrderByIdDesc(commande)
                 .stream()
+                .filter(p -> p.isActif() && p.isConfirmed())
                 .map(Paiement::getMontant)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -542,12 +566,13 @@ public class ServPaiement {
     public BigDecimal getMontantAffecte(Commande commande) {
 
         if (commande == null) {
-            return BigDecimal.valueOf(0);
+            return BigDecimal.ZERO;
         }
 
         return repAffectationPaiement
                 .findAllByCommande(commande)
                 .stream()
+                .filter(a -> a.getPaiement().isActif() && a.getPaiement().isConfirmed())
                 .map(AffectationPaiement::getMontant)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -567,7 +592,7 @@ public class ServPaiement {
     public BigDecimal getResteAPayer(Commande commande) {
 
         if (commande == null) {
-            return BigDecimal.valueOf(0);
+            return BigDecimal.ZERO;
         }
 
         BigDecimal reste = commande.getMontantHT()
@@ -582,7 +607,7 @@ public class ServPaiement {
     public BigDecimal calculerCreditClient(Client client) {
 
         if (client == null) {
-            return BigDecimal.valueOf(0);
+            return BigDecimal.ZERO;
         }
 
         return repCommande
@@ -605,13 +630,13 @@ public class ServPaiement {
         }
 
         BigDecimal paye = getMontantPaye(commande);
-        BigDecimal ttc = commande.getMontantTTC();
+        BigDecimal montantHT = commande.getMontantHT();
 
         if (paye.compareTo(BigDecimal.ZERO) <= 0) {
             commande.setStatutPaiement(
                     StatutPaiement.NON_PAYEE
             );
-        } else if (paye.compareTo(ttc) < 0) {
+        } else if (paye.compareTo(montantHT) < 0) {
             commande.setStatutPaiement(
                     StatutPaiement.PARTIELLEMENT_PAYEE
             );
@@ -658,7 +683,7 @@ public class ServPaiement {
     public BigDecimal getMontantAffecte(Paiement paiement) {
 
         if (paiement == null) {
-            return BigDecimal.valueOf(0);
+            return BigDecimal.ZERO;
         }
 
         return repAffectationPaiement
@@ -677,6 +702,74 @@ public class ServPaiement {
                     "Le montant doit être supérieur à zéro."
             );
         }
+    }
+
+    @Transactional
+    public Paiement confirmerPaiement(Long paiementId) {
+
+        Paiement paiement = rePaiement.findOneById(paiementId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Paiement introuvable.")
+                );
+
+        // Vérifier que le paiement peut être confirmé
+        if (!paiement.isActif()) {
+            throw new IllegalStateException(
+                    "Impossible de confirmer un paiement inactif."
+            );
+        }
+
+        if (paiement.isConfirmed()) {
+            throw new IllegalStateException(
+                    "Ce paiement est déjà confirmé."
+            );
+        }
+
+        Client client = paiement.getClient();
+
+        if (client == null) {
+            throw new IllegalStateException(
+                    "Le client associé au paiement est introuvable."
+            );
+        }
+
+        // CAS 1 : paiement directement lié à une commande
+        if (paiement.getCommande() != null) {
+
+            Commande commande = paiement.getCommande();
+
+            BigDecimal reste = getResteAPayer(commande);
+
+            if (paiement.getMontant().compareTo(reste) > 0) {
+                throw new IllegalStateException(
+                        "Confirmation refusée : le montant dépasse le reste à payer HT de la commande."
+                );
+            }
+
+            paiement.setConfirmed(true);
+            paiement = rePaiement.save(paiement);
+
+            mettreAJourStatutPaiement(commande);
+
+        } else {
+
+            // CAS 2 : paiement global du client
+            BigDecimal credit = calculerCreditClient(client);
+
+            if (paiement.getMontant().compareTo(credit) > 0) {
+                throw new IllegalStateException(
+                        "Confirmation refusée : le montant dépasse le crédit restant HT du client."
+                );
+            }
+
+            paiement.setConfirmed(true);
+            paiement = rePaiement.save(paiement);
+
+            // Affectation aux commandes les plus anciennes
+            affecterAutomatiquement(paiement, client);
+        }
+
+        return paiement;
     }
 
 
