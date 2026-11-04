@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -31,6 +32,9 @@ public class Paiement {
 
     @Column(name = "mod_pai")
     private String modPai;
+
+    @Column(name = "date_echeance")
+    private LocalDate dateEcheance;
 
     @Column(name = "confirmed", nullable = false)
     @ColumnDefault("false")
@@ -196,5 +200,13 @@ public class Paiement {
 
     public void setActif(boolean actif) {
         this.actif = actif;
+    }
+
+    public LocalDate getDateEcheance() {
+        return dateEcheance;
+    }
+
+    public void setDateEcheance(LocalDate dateEcheance) {
+        this.dateEcheance = dateEcheance;
     }
 }

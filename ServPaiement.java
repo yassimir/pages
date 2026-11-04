@@ -21,6 +21,7 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
@@ -41,6 +42,7 @@ public class ServPaiement {
     private final UtilisateurConnecteService utilisateurConnecteService;
     private final StorageService storageService;
     private final RepImage repImage;
+    private final RepClient repClient;
 
     public ServPaiement(RePaiement rePaiement,
                         RepAffectationPaiement repAffectationPaiement,
@@ -48,7 +50,8 @@ public class ServPaiement {
                         RepCompte repCompte,
                         UtilisateurConnecteService utilisateurConnecteService,
                         StorageService storageService,
-                        RepImage repImage) {
+                        RepImage repImage,
+                        RepClient repClient) {
         this.rePaiement = rePaiement;
         this.repAffectationPaiement = repAffectationPaiement;
         this.repCommande = repCommande;
@@ -56,6 +59,7 @@ public class ServPaiement {
         this.utilisateurConnecteService = utilisateurConnecteService;
         this.storageService = storageService;
         this.repImage = repImage;
+        this.repClient = repClient;
     }
 
 
@@ -290,11 +294,14 @@ public class ServPaiement {
     @Transactional
     public Paiement payerCommande(Commande commande,
                                   BigDecimal montant,
+                                  Long compteId,
                                   String modePaiement,
                                   String description,
+                                  LocalDate dateEcheance,
                                   MultipartFile justificatif) {
 
         verifierMontant(montant);
+        verifierDateEcheance(modePaiement, dateEcheance);
 
         if (commande == null) {
             throw new IllegalArgumentException("La commande est introuvable.");
@@ -307,6 +314,14 @@ public class ServPaiement {
                     "Le montant du paiement dépasse le reste à payer."
             );
         }
+        Compte compte = this.repCompte.findById(compteId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Compte introuvable")
+                );
+
+        if (!compte.getActif()) {
+            throw new IllegalStateException("Ce compte est désactivé.");
+        }
 
         Paiement paiement = new Paiement();
 
@@ -315,12 +330,14 @@ public class ServPaiement {
                 new SimpleDateFormat("dd/MM/yyyy").format(new Date())
         );
         paiement.setModPai(modePaiement);
+        paiement.setDateEcheance(dateEcheance);
         paiement.setDescription(description);
         paiement.setCommande(commande);
         paiement.setClient(commande.getClient());
         paiement.setUtilisateur(
                 utilisateurConnecteService.getUtilisateurConnecte()
         );
+        paiement.setCompte(compte);
 
         // Nouveau paiement : actif mais en attente de confirmation
         paiement.setActif(true);
@@ -346,9 +363,11 @@ public class ServPaiement {
                                       Long compteId,
                                       String modePaiement,
                                       String description,
+                                      LocalDate dateEcheance,
                                       MultipartFile justificatif) {
 
         verifierMontant(montant);
+        verifierDateEcheance(modePaiement, dateEcheance);
 
         if (client == null) {
             throw new IllegalArgumentException("Le client est introuvable.");
@@ -378,6 +397,7 @@ public class ServPaiement {
                 new SimpleDateFormat("dd/MM/yyyy").format(new Date())
         );
         paiement.setModPai(modePaiement);
+        paiement.setDateEcheance(dateEcheance);
         paiement.setDescription(description);
         paiement.setClient(client);
         paiement.setUtilisateur(
@@ -500,9 +520,24 @@ public class ServPaiement {
     @Transactional
     public void affecterAutomatiquement(Paiement paiement, Client client) {
 
+        if (paiement == null) {
+            throw new IllegalArgumentException("Le paiement est introuvable.");
+        }
+
+        if (client == null) {
+            throw new IllegalArgumentException("Le client est introuvable.");
+        }
+
         if (!paiement.isActif() || !paiement.isConfirmed()) {
             throw new IllegalStateException(
                     "Impossible d'affecter un paiement non confirmé ou inactif."
+            );
+        }
+
+        if (paiement.getClient() == null ||
+                !Objects.equals(paiement.getClient().getId(), client.getId())) {
+            throw new IllegalArgumentException(
+                    "Le paiement et le client ne correspondent pas."
             );
         }
 
@@ -524,7 +559,8 @@ public class ServPaiement {
                 continue;
             }
 
-            BigDecimal montantAffectation = restePaiement.min(resteCommande);
+            BigDecimal montantAffectation =
+                    restePaiement.min(resteCommande);
 
             AffectationPaiement affectation = new AffectationPaiement();
 
@@ -572,7 +608,7 @@ public class ServPaiement {
         return repAffectationPaiement
                 .findAllByCommande(commande)
                 .stream()
-                .filter(a -> a.getPaiement().isActif() && a.getPaiement().isConfirmed())
+                .filter(a -> a.getPaiement() != null && a.getPaiement().isActif() && a.getPaiement().isConfirmed())
                 .map(AffectationPaiement::getMontant)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -680,19 +716,22 @@ public class ServPaiement {
     /**
      * Retourne le montant déjà affecté d'un paiement global.
      */
-    public BigDecimal getMontantAffecte(Paiement paiement) {
+    private BigDecimal getMontantAffecte(Paiement paiement) {
 
-        if (paiement == null) {
+        if (paiement == null ||
+                !paiement.isActif() ||
+                !paiement.isConfirmed()) {
             return BigDecimal.ZERO;
         }
 
-        return repAffectationPaiement
-                .findAllByPaiement(paiement)
+        return repAffectationPaiement.findAllByPaiement(paiement)
                 .stream()
+                .filter(a -> a.getPaiement() != null
+                        && a.getPaiement().isActif()
+                        && a.getPaiement().isConfirmed())
                 .map(AffectationPaiement::getMontant)
                 .filter(Objects::nonNull)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
-
     }
 
     private void verifierMontant(BigDecimal montant) {
@@ -707,33 +746,56 @@ public class ServPaiement {
     @Transactional
     public Paiement confirmerPaiement(Long paiementId) {
 
-        Paiement paiement = rePaiement.findOneById(paiementId)
+        // 1. Première lecture pour récupérer l'identifiant du client
+        Paiement paiementInitial = rePaiement.findOneById(paiementId)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Paiement introuvable.")
                 );
 
-        // Vérifier que le paiement peut être confirmé
+        if (paiementInitial.getClient() == null) {
+            throw new IllegalStateException(
+                    "Le client associé au paiement est introuvable."
+            );
+        }
+
+        Long clientId = paiementInitial.getClient().getId();
+
+        // 2. Verrouiller le client
+        Client client = repClient.findByIdForUpdate(clientId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Client introuvable.")
+                );
+
+        // 3. Verrouiller et recharger le paiement
+        Paiement paiement = rePaiement.findByIdForUpdate(paiementId)
+                .orElseThrow(() ->
+                        new EntityNotFoundException("Paiement introuvable.")
+                );
+
+        // Vérifier que le paiement appartient toujours au client
+        if (paiement.getClient() == null
+                || !Objects.equals(
+                paiement.getClient().getId(),
+                client.getId())) {
+
+            throw new IllegalStateException(
+                    "Le client associé au paiement a changé."
+            );
+        }
+
+        // 4. Vérifier son état
         if (!paiement.isActif()) {
             throw new IllegalStateException(
                     "Impossible de confirmer un paiement inactif."
             );
         }
 
+        // Idempotence : ne pas effectuer une deuxième affectation
         if (paiement.isConfirmed()) {
-            throw new IllegalStateException(
-                    "Ce paiement est déjà confirmé."
-            );
+            return paiement;
         }
 
-        Client client = paiement.getClient();
-
-        if (client == null) {
-            throw new IllegalStateException(
-                    "Le client associé au paiement est introuvable."
-            );
-        }
-
-        // CAS 1 : paiement directement lié à une commande
+        // 5. CAS 1 : paiement directement lié à une commande
         if (paiement.getCommande() != null) {
 
             Commande commande = paiement.getCommande();
@@ -742,7 +804,8 @@ public class ServPaiement {
 
             if (paiement.getMontant().compareTo(reste) > 0) {
                 throw new IllegalStateException(
-                        "Confirmation refusée : le montant dépasse le reste à payer HT de la commande."
+                        "Confirmation refusée : le montant dépasse "
+                                + "le reste à payer HT de la commande."
                 );
             }
 
@@ -753,12 +816,13 @@ public class ServPaiement {
 
         } else {
 
-            // CAS 2 : paiement global du client
+            // 6. CAS 2 : paiement global du client
             BigDecimal credit = calculerCreditClient(client);
 
             if (paiement.getMontant().compareTo(credit) > 0) {
                 throw new IllegalStateException(
-                        "Confirmation refusée : le montant dépasse le crédit restant HT du client."
+                        "Confirmation refusée : le montant dépasse "
+                                + "le crédit restant HT du client."
                 );
             }
 
@@ -770,6 +834,29 @@ public class ServPaiement {
         }
 
         return paiement;
+    }
+
+    private void verifierDateEcheance(String modePaiement, LocalDate dateEcheance) {
+
+        boolean echeanceRequise = modePaiement != null
+                && (
+                modePaiement.equals("Chèque")
+                        || modePaiement.startsWith("Chèque -")
+                        || modePaiement.equals("Effet")
+                        || modePaiement.startsWith("Effet -")
+        );
+
+        if (echeanceRequise && dateEcheance == null) {
+            throw new IllegalArgumentException(
+                    "La date d'échéance est obligatoire pour un chèque ou un effet."
+            );
+        }
+
+        if (!echeanceRequise && dateEcheance != null) {
+            throw new IllegalArgumentException(
+                    "La date d'échéance ne concerne que les chèques et les effets."
+            );
+        }
     }
 
 

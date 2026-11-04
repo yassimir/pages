@@ -14,6 +14,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import java.time.LocalDate;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -255,6 +257,8 @@ public class PaymentController {
                           @RequestParam("compteId") Long compteId,
                           @RequestParam("modPai") String modePaiement,
                           @RequestParam("pInfo") String pInfo,
+                          @RequestParam(value = "dateEcheance", required = false)
+                              @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEcheance,
                           @RequestParam(value = "justificatif", required = false) MultipartFile justificatif,
                           RedirectAttributes attributes) {
 
@@ -285,7 +289,7 @@ public class PaymentController {
         String description = "Paiement global - " + mdP;
 
         try {
-            servPaiement.payerCreditClient(client, montant,compteId, mdP, description, justificatif);
+            servPaiement.payerCreditClient(client, montant,compteId, mdP, description, dateEcheance, justificatif);
             attributes.addFlashAttribute(
                     "success",
                     "Paiement enregistré. Il est en attente de confirmation."
@@ -299,10 +303,14 @@ public class PaymentController {
 
     @PostMapping("/pay-cmd")
     public String paycmd(
-            @RequestParam("mt") BigDecimal montant,
+            @RequestParam("montant") BigDecimal montant,
             @RequestParam("id") long idCommande,
+            @RequestParam("compteId") Long compteId,
             @RequestParam("client_id") Long clientId,
-            @RequestParam("pInfo") String modePaiement,
+            @RequestParam("modPai") String modePaiement,
+            @RequestParam("pInfo") String pInfo,
+            @RequestParam(value = "dateEcheance", required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate dateEcheance,
             @RequestParam(value = "justificatif", required = false) MultipartFile justificatif,
             RedirectAttributes attributes) {
 
@@ -321,12 +329,29 @@ public class PaymentController {
                 );
             }
 
+            if (!MODES_PAIEMENT.contains(modePaiement)) {
+                throw new IllegalArgumentException("Mode de paiement invalide.");
+            }
+
+            if (pInfo != null && pInfo.length() > 150) {
+                throw new IllegalArgumentException(
+                        "Les détails du paiement sont trop longs (150 caractères maximum)."
+                );
+            }
+
+            String mdP = modePaiement
+                    + ((pInfo == null || pInfo.isBlank())
+                    ? ""
+                    : " - " + pInfo.trim());
+
             servPaiement.payerCommande(
                     commande,
                     montant,
-                    modePaiement,
+                    compteId,
+                    mdP,
                     "Paiement de la commande n°" + commande.getId()
                             + " - " + commande.getClient().getSte(),
+                    dateEcheance,
                     justificatif
             );
 
