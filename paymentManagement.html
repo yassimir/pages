@@ -1368,16 +1368,27 @@
                                         </span>
                                     </td>
                                     <td>
+                                        <!-- Paiement inactif : remplacé ou désactivé -->
+                                        <span class="status rejected"
+                                              th:if="${!payment.actif}">
+                                            Inactif
+                                        </span>
+
+                                        <!-- Paiement confirmé -->
                                         <span class="status confirmed"
-                                              th:if="${payment.confirmed}">
+                                              th:if="${payment.actif and payment.confirmed}">
                                             Confirmé
                                         </span>
+
+                                        <!-- Paiement actif en attente -->
                                         <span class="status pending"
-                                              th:unless="${payment.confirmed}">
+                                              th:if="${payment.actif and !payment.confirmed}">
                                             En attente
                                         </span>
                                     </td>
+
                                     <td>
+                                        <!-- Consulter -->
                                         <a class="action-btn view-btn"
                                            href="#"
                                            data-toggle="modal"
@@ -1386,6 +1397,21 @@
                                            title="Consulter">
                                             <i class="fa fa-eye"></i>
                                         </a>
+
+                                        <!-- Confirmer uniquement si le paiement est actif et non confirmé -->
+                                        <form th:if="${payment.actif and !payment.confirmed
+                                               and #authorization.expression('hasRole(''ADMIN'')')}"
+                                              th:action="@{/gharnata/payments/{id}/confirm(id=${payment.id})}"
+                                              method="post"
+                                              style="display:inline;">
+
+                                            <button type="submit"
+                                                    class="action-btn confirm-btn"
+                                                    title="Confirmer le paiement"
+                                                    onclick="return confirm('Voulez-vous vraiment confirmer ce paiement ?');">
+                                                <i class="fa fa-check"></i>
+                                            </button>
+                                        </form>
                                     </td>
                                 </tr>
                                 <tr th:if="${payments.isEmpty()}">
