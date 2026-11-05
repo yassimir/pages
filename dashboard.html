@@ -8,6 +8,7 @@
     <link rel="icon" href="/assets/images/logo/logo_icon.png" type="image/png">
     <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
     <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
+    <link rel="stylesheet" href="/assets/css/payment-details.css">
     <style>
         :root {
             --ink: #172033;
@@ -658,6 +659,29 @@
             margin-bottom: 8px
         }
 
+        .payment-notification-btn {
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .payment-notification-count {
+            position: absolute;
+            top: -9px;
+            right: -12px;
+            min-width: 17px;
+            height: 17px;
+            padding: 0 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            background: var(--red);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            border: 2px solid #fff;
+        }
+
         .footer {
             color: #a2aabd;
             font-size: 11px;
@@ -840,13 +864,39 @@
                     <strong>Dashboard</strong>
                 </div>
             </div>
-            <div class="top-actions"><a class="icon-btn" th:href="@{/gharnata/notif-stock}" aria-label="Notifications"><i
-                    class="fa fa-bell-o"></i><span th:if="${notif != null and notif != 0}" class="notification"></span></a>
-                <div class="profile"><img src="/images/profile.png" alt="Photo de profil">
-                    <div><span class="profile-name" th:text="${#authentication.name}">Administrateur</span><span
-                            class="profile-role">Administrateur</span></div>
-                    <a th:href="@{/logout}" class="text-muted ml-2" aria-label="Se déconnecter"><i
-                            class="fa fa-sign-out"></i></a></div>
+            <div class="top-actions">
+                <!-- Notifications de stock : conservées -->
+                <a class="icon-btn"
+                   th:href="@{/gharnata/notif-stock}"
+                   aria-label="Notifications de stock">
+                    <i class="fa fa-bell-o"></i>
+                    <span th:if="${notif != null and notif != 0}"
+                          class="notification"></span>
+                </a>
+
+                <!-- Notifications de paiement -->
+                <div th:replace="~{fragments/paymentNotificationsBell :: paymentNotificationsBell}"></div>
+                <!--<a class="icon-btn payment-notification-btn"
+                   th:href="@{/gharnata/notifications-paiement}"
+                   aria-label="Notifications de paiement">
+
+                    <i class="fa fa-credit-card"></i>
+
+                    <span class="payment-notification-count"
+                          th:if="${nombreNotificationsPaiementActives != null and nombreNotificationsPaiementActives > 0}"
+                          th:text="${nombreNotificationsPaiementActives}">
+                    </span>
+                </a>-->
+                <div class="profile">
+                    <img src="/images/profile.png" alt="Photo de profil">
+                    <div>
+                        <span class="profile-name" th:text="${#authentication.name}">Administrateur</span>
+                        <span class="profile-role">Administrateur</span>
+                    </div>
+                    <a th:href="@{/logout}" class="text-muted ml-2" aria-label="Se déconnecter">
+                        <i class="fa fa-sign-out"></i>
+                    </a>
+                </div>
             </div>
         </header>
         <section class="page">
@@ -987,8 +1037,11 @@
             </div>
         </section>
         <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
-        </section></main>
+        </section>
+    </main>
+    <div th:replace="~{fragments/paymentDetailsModal :: paymentDetailsModal}"></div>
 </div>
+<script src="/assets/js/payment-details.js"></script>
 <script src="/assets/js/jquery.min.js"></script>
 <script src="/assets/js/popper.min.js"></script>
 <script src="/assets/js/bootstrap.min.js"></script>
