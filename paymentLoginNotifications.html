@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="paymentLoginNotifications">
+
+    <div th:if="${notificationsPaiementConnexion != null
+                 and !#lists.isEmpty(notificationsPaiementConnexion)}">
+
+        <div th:each="notification : ${notificationsPaiementConnexion}"
+             class="modal fade"
+             th:id="'paymentLoginNotification-' + ${notification.id}"
+             tabindex="-1"
+             role="dialog"
+             aria-hidden="true">
+
+            <div class="modal-dialog modal-dialog-centered" role="document">
+                <div class="modal-content">
+
+                    <div class="modal-header">
+                        <h5 class="modal-title"
+                            th:text="${notification.titre}">
+                        </h5>
+
+                        <button type="button"
+                                class="close"
+                                data-dismiss="modal"
+                                aria-label="Fermer">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+
+                    <div class="modal-body">
+                        <p th:text="${notification.message}"></p>
+
+                        <small class="text-muted">
+                            Paiement n°
+                            <strong th:text="${notification.paiement.id}"></strong>
+                        </small>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button"
+                                class="btn btn-secondary"
+                                data-dismiss="modal">
+                            Plus tard
+                        </button>
+
+                        <button type="button"
+                                class="btn btn-primary btn-voir-notification-paiement"
+                                th:data-notification-id="${notification.id}"
+                                th:data-paiement-id="${notification.paiement.id}">
+                            Voir le paiement
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${nombreNotificationsPaiementRestantes > 0}"
+             class="alert alert-info mt-3">
+            <span th:text="${nombreNotificationsPaiementRestantes}"></span>
+            autre(s) notification(s) en attente.
+        </div>
+
+    </div>
+
+</div>
+
+</body>
+</html>
