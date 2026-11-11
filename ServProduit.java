@@ -4,9 +4,17 @@ import com.gharnata.entity.*;
 import com.gharnata.entity.dto.ProductDTO;
 import com.gharnata.repository.RepCategory;
 import com.gharnata.repository.RepCommande;
+import com.gharnata.repository.RepImage;
 import com.gharnata.repository.RepProduit;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.gharnata.storage.StorageService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.logging.Logger;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -18,17 +26,21 @@ public class ServProduit {
     private RepCategory repCategory;
     private ServNotification servNotification;
     private RepCommande repCommande;
-    private ServClient servClient;
+    private final RepImage repImage;
+    private final StorageService storageService;
+
+    private static final Logger LOGGER = Logger.getLogger(ServProduit.class.getName());
 
 
-    public ServProduit(RepProduit repProduit, ServClient servClient,
-                       ServNotification servNotification, RepCategory repCategory,
-                       RepCommande repCommande) {
+    public ServProduit(RepProduit repProduit, ServNotification servNotification,
+                       RepCategory repCategory, RepCommande repCommande,
+                       RepImage repImage, StorageService storageService) {
         this.repProduit = repProduit;
-        this.servClient = servClient;
         this.servNotification = servNotification;
         this.repCategory = repCategory;
         this.repCommande = repCommande;
+        this.repImage = repImage;
+        this.storageService = storageService;
     }
 
     public List<ProductDTO> searchProducts(String query) {
@@ -67,8 +79,34 @@ public class ServProduit {
         return this.repProduit.findAllByCategorie(c);
     }
 
+    @Transactional
     public void deletePrById(Long id) {
-        this.repProduit.deleteById(id);
+
+        Produit produit = repProduit.findById(id)
+                .orElse(null);
+
+        if (produit == null) {
+            return;
+        }
+
+        Image image = produit.getPic();
+
+        String chemin = image != null
+                ? image.getCheminFichier()
+                : null;
+
+        // Supprimer d'abord le produit
+        repProduit.delete(produit);
+        repProduit.flush();
+
+        // Supprimer ensuite les métadonnées de l'image
+        if (image != null) {
+            repImage.delete(image);
+            repImage.flush();
+        }
+
+        // Supprimer le fichier physique après validation
+        programmerSuppressionFichier(chemin);
     }
 
     public Categorie getCatById(int id){
@@ -113,8 +151,73 @@ public class ServProduit {
 
     }
 
+    @Transactional
     public void deleteAllById(List<Long> ids) {
-        this.repProduit.deleteAllById(ids);
+
+        if (ids == null || ids.isEmpty()) {
+            return;
+        }
+
+        List<Produit> produits = repProduit.findAllById(ids);
+
+        if (produits.isEmpty()) {
+            return;
+        }
+
+        List<Image> images = produits.stream()
+                .map(Produit::getPic)
+                .filter(image -> image != null)
+                .toList();
+
+        Set<String> chemins = new LinkedHashSet<>();
+
+        for (Image image : images) {
+            if (image.getCheminFichier() != null) {
+                chemins.add(image.getCheminFichier());
+            }
+        }
+
+        // Suppression des produits
+        repProduit.deleteAll(produits);
+        repProduit.flush();
+
+        // Suppression des métadonnées
+        repImage.deleteAll(images);
+        repImage.flush();
+
+        // Suppression physique après validation de la transaction
+        for (String chemin : chemins) {
+            programmerSuppressionFichier(chemin);
+        }
+    }
+
+    private void programmerSuppressionFichier(String chemin) {
+
+        if (chemin == null
+                || chemin.isBlank()
+                || chemin.equals("produits/defaut.jpg")) {
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+
+                    @Override
+                    public void afterCommit() {
+
+                        try {
+                            storageService.delete(chemin);
+
+                        } catch (RuntimeException e) {
+
+                            LOGGER.severe(
+                                    "Impossible de supprimer le fichier : "
+                                            + chemin + " - " + e.getMessage()
+                            );
+                        }
+                    }
+                }
+        );
     }
 
     public List<Produit> getAllByIds(List<Long> ids) {
