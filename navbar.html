@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<header th:fragment="navbar(breadcrumb)"
+        class="topbar">
+
+    <div class="d-flex align-items-center">
+
+        <button class="mobile-toggle"
+                type="button"
+                id="sidebarToggle"
+                aria-label="Ouvrir le menu">
+            <i class="fa fa-bars"></i>
+        </button>
+
+        <!--<div class="crumbs">
+            <span>Espace de travail</span>
+            <i class="fa fa-angle-right"></i>
+            <strong th:text="${breadcrumb}">Dashboard</strong>
+        </div>-->
+        <div class="crumbs">
+            <th:block th:each="item, iter : ${breadcrumbs}">
+                <i class="fa fa-angle-right" th:if="${!iter.first}"></i>
+
+                <strong th:if="${iter.last}"
+                        th:text="${item}">
+                    Dashboard
+                </strong>
+
+                <span th:unless="${iter.last}"
+                      th:text="${item}">
+            Espace de travail
+        </span>
+            </th:block>
+        </div>
+
+    </div>
+
+    <div class="top-actions">
+
+        <!-- Notifications de stock -->
+        <a class="icon-btn"
+           th:href="@{/notifications/stock}"
+           aria-label="Notifications de stock">
+
+            <i class="fa fa-bell-o"></i>
+
+            <span th:if="${notif != null and notif != 0}"
+                  class="notification">
+            </span>
+        </a>
+
+        <!-- Notifications de paiement -->
+        <div th:replace="~{fragments/paymentNotificationsBell :: paymentNotificationsBell}">
+        </div>
+
+        <!-- Profil -->
+        <div class="profile">
+
+            <img src="/images/profile.png"
+                 alt="Photo de profil">
+
+            <div>
+                <span class="profile-name"
+                      th:text="${#authentication.name}">
+                    Administrateur
+                </span>
+
+                <span class="profile-role">
+                    Administrateur
+                </span>
+            </div>
+
+            <form th:action="@{/logout}" method="post" style="display:inline;">
+                <button type="submit"
+                        class="text-muted ml-2"
+                        aria-label="Se déconnecter"
+                        style="border:none; background:none; padding:0; cursor:pointer;">
+                    <i class="fa fa-sign-out"></i>
+                </button>
+            </form>
+
+        </div>
+
+    </div>
+
+</header>
+
+</body>
+</html>
