@@ -622,6 +622,69 @@
                     color: #46526b
                 }
 
+                .pagination-toolbar {
+                    display: flex;
+                    justify-content: flex-end;
+                    margin-bottom: 18px;
+                }
+
+                .page-size-form {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    color: var(--muted);
+                    font-size: 12px;
+                }
+
+                .page-size-form select {
+                    height: 36px;
+                    border: 1px solid var(--line);
+                    border-radius: 8px;
+                    padding: 0 10px;
+                    color: var(--ink);
+                    background: #fff;
+                    outline: none;
+                }
+
+                .pagination-container {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 22px;
+                    margin-top: 22px;
+                }
+
+                .page-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 10px 14px;
+                    border: 1px solid var(--line);
+                    border-radius: 8px;
+                    background: #fff;
+                    color: var(--blue);
+                    font-size: 12px;
+                    font-weight: 600;
+                }
+
+                .page-btn:hover {
+                    background: var(--blue-soft);
+                }
+
+                .page-btn.disabled {
+                    opacity: .45;
+                    pointer-events: none;
+                }
+
+                .page-info {
+                    color: var(--muted);
+                    font-size: 12px;
+                }
+
+                .page-info strong {
+                    color: var(--ink);
+                }
+
                 @media (max-width: 780px) {
                     .sidebar {
                         transform: translateX(-100%);
@@ -729,26 +792,47 @@
                     <a class="primary-btn" th:href="@{/products/add}"><i class="fa fa-plus"></i> Ajouter un produit</a>
                 </div>
                 <div class="toolbar">
-                    <form class="search-form" th:action="@{/products/stock}" method="post"><input list="codes"
-                                                                                                                class="search-input"
-                                                                                                                name="ref"
-                                                                                                                placeholder="Rechercher par référence ou nom de produit"
-                                                                                                                required
-                                                                                                                autofocus>
-                        <datalist id="codes">
-                            <th:block th:each="product : ${prods}">
-                                <option th:value="${product.ref}" th:text="${product.name}"></option>
-                            </th:block>
-                        </datalist>
-                        <button class="search-btn" type="submit" aria-label="Rechercher"><i class="fa fa-search"></i>
+                    <form class="search-form" th:action="@{/products/stock}" method="get">
+                        <input type="text"
+                               class="search-input"
+                               name="ref"
+                               th:value="${search}"
+                               placeholder="Rechercher par référence ou nom de produit"
+                               autofocus>
+
+                        <input type="hidden" name="size" th:value="${pageSize}">
+
+                        <button class="search-btn" type="submit" aria-label="Rechercher">
+                            <i class="fa fa-search"></i>
                         </button>
                     </form>
                     <div class="stock-meta"><i class="fa fa-bar-chart"></i> Suivi des disponibilités</div>
                 </div>
                 <div class="stock-panel">
                     <div class="panel-head">
-                        <div><h2>Produits en stock</h2>
-                            <p>Sélectionnez plusieurs produits pour effectuer une suppression groupée.</p></div>
+                        <div>
+                            <h2>Produits en stock</h2>
+                            <p>
+                                <span th:text="${totalElements}"></span> produit(s) trouvé(s).
+                                Affichage de
+                                <span th:text="${totalElements == 0 ? 0 : currentPage * pageSize + 1}"></span>
+                                à
+                                <span th:text="${currentPage * pageSize + products.size()}"></span>.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="pagination-toolbar">
+                        <form th:action="@{/products/stock}" method="get" class="page-size-form">
+                            <input type="hidden" name="ref" th:value="${search}">
+
+                            <label for="pageSize">Produits par page :</label>
+
+                            <select id="pageSize" name="size" onchange="this.form.submit()">
+                                <option value="20" th:selected="${pageSize == 20}">20</option>
+                                <option value="40" th:selected="${pageSize == 40}">40</option>
+                                <option value="80" th:selected="${pageSize == 80}">80</option>
+                            </select>
+                        </form>
                     </div>
                     <form th:action="@{/products/delete-products}" method="post" id="stockForm">
                         <div class="stock-table-wrap">
@@ -805,6 +889,27 @@
                             </button>
                         </div>
                     </form>
+                    <div class="pagination-container" th:if="${totalPages > 1}">
+
+                        <a class="page-btn"
+                           th:classappend="${currentPage == 0} ? ' disabled' : ''"
+                           th:if="${currentPage > 0}"
+                           th:href="@{/products/stock(page=${currentPage - 1}, size=${pageSize}, ref=${search})}">
+                            <i class="fa fa-chevron-left"></i> Précédent
+                        </a>
+
+                        <span class="page-info">
+                            Page <strong th:text="${currentPage + 1}"></strong>
+                            sur <strong th:text="${totalPages}"></strong>
+                        </span>
+
+                        <a class="page-btn"
+                           th:if="${currentPage + 1 < totalPages}"
+                           th:href="@{/products/stock(page=${currentPage + 1}, size=${pageSize}, ref=${search})}">
+                            Suivant <i class="fa fa-chevron-right"></i>
+                        </a>
+
+                    </div>
                 </div>
                 <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
             </section>
