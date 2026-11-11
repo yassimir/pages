@@ -1,7 +1,6 @@
 package com.gharnata.controller;
 
 import com.gharnata.entity.Categorie;
-import com.gharnata.entity.PanierItems;
 import com.gharnata.entity.Produit;
 import com.gharnata.entity.dto.ProductDTO;
 import com.gharnata.repository.RepImage;
@@ -10,8 +9,6 @@ import com.gharnata.service.ServNotification;
 import com.gharnata.service.ServPanier;
 import com.gharnata.service.ServProduit;
 import com.gharnata.storage.StorageService;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -19,8 +16,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.gharnata.entity.Image;
 import com.gharnata.storage.StorageException;
-
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -28,10 +23,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.math.BigDecimal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 @Controller
-@RequestMapping("/gharnata")
+@RequestMapping("/products")
 public class ProduitController {
 
     private final ServProduit servProduit;
@@ -72,13 +68,6 @@ public class ProduitController {
                         image.getCheminFichier()
                 );
 
-            }
-            // Compatibilité temporaire avec les anciens BLOB
-            else if (image.getData() != null
-                    && image.getData().length > 0) {
-
-                resource = new ByteArrayResource(image.getData());
-
             } else {
                 return ResponseEntity.notFound().build();
             }
@@ -103,14 +92,19 @@ public class ProduitController {
         }
     }
 
-    @GetMapping("/add-product")
+    @GetMapping("/add")
     public String addproduit(Model model){
         model.addAttribute("cats", this.servProduit.getAllCats());
         model.addAttribute("ancP", new Produit());
         model.addAttribute("notif",servNotification.nbNotif());
+        model.addAttribute("breadcrumbs", List.of(
+                "Gestion Commerciale",
+                "Produits et Stock",
+                "Ajouter un produit"
+        ));
         return "gest/addProduct";
     }
-    @GetMapping("/products/check-ref")
+    @GetMapping("/check-ref")
     public String checkRef(@RequestParam String ref, @RequestParam(required = false) Long excludeId, Model model) {
         Produit p = servProduit.getProductByRef(ref);
         boolean existe = (p != null) && (excludeId == null || !p.getId().equals(excludeId));
@@ -120,7 +114,7 @@ public class ProduitController {
         return "fragments/ref-feedback :: feedback";
     }
     //for modification page
-    @PostMapping("/add-product")
+    @PostMapping("/add")
     public String addproduit(@ModelAttribute Produit produit,int idCat, Model model, RedirectAttributes attributes, MultipartFile imagee) throws Exception {
         produit.setCategorie(this.servProduit.getCatById(idCat));
         Produit p = this.servProduit.getProductByRef(produit.getRef());
@@ -138,9 +132,9 @@ public class ProduitController {
             return "gest/addProduct";
         }
         attributes.addFlashAttribute("success", "Produit ajouté avec succès.");
-        return "redirect:/gharnata/add-product";
+        return "redirect:/products/add";
     }
-    @GetMapping("/show-products")
+    @GetMapping
     public String showProducts(@RequestParam(required = false) Long productId, Model model){
         List<Produit> lP;
         if (productId != null) {
@@ -158,10 +152,15 @@ public class ProduitController {
         model.addAttribute("prods", this.servProduit.getProductDTOs());
         model.addAttribute("notif", servNotification.nbNotif());
         model.addAttribute("cats", this.servProduit.getAllCats());
+        model.addAttribute("breadcrumbs", List.of(
+                "Gestion Commerciale",
+                "Produits et Stock",
+                "Galerie des produits"
+        ));
         return "gest/showProducts";
     }
 
-    @GetMapping("/show-products-stock")
+    @GetMapping("/stock")
     public String showProdSt(Model model, @RequestParam(value = "ref", required = false) String ref){
         List<Produit> lP = new ArrayList<>();
         if (ref != null) {
@@ -179,30 +178,40 @@ public class ProduitController {
         model.addAttribute("notif",servNotification.nbNotif());
         model.addAttribute("cats", this.servProduit.getAllCats());
         model.addAttribute("idxs", indexs);
+        model.addAttribute("breadcrumbs", List.of(
+                "Gestion Commerciale",
+                "Produits et Stock",
+                "Page de stock"
+        ));
         return "gest/showProdStock";
     }
-    @PostMapping("/show-products-stock")
+    @PostMapping("/stock")
     public String showProdSt(@RequestParam("ref") String ref, RedirectAttributes attributes){
         attributes.addAttribute("ref", ref);
-        return "redirect:/gharnata/show-products-stock";
+        return "redirect:/products/stock";
     }
 
-    @GetMapping("/product-details/{id}")
+    @GetMapping("/{id}/details")
     public String showOneProduct(@PathVariable Long id, Model model){
         Produit p = this.servProduit.getProductById(id);
         model.addAttribute("product", p);
         model.addAttribute("notif",servNotification.nbNotif());
         model.addAttribute("cats", this.servProduit.getAllCats());
+        model.addAttribute("breadcrumbs", List.of(
+                "Gestion Commerciale",
+                "Produits et Stock",
+                p.getName()
+        ));
         return "gest/productDetails";
     }
-    @GetMapping("/api/products/search")
+    @GetMapping("/api/search")
     @ResponseBody
     public List<ProductDTO> searchProducts(
             @RequestParam("q") String query) {
 
         return servProduit.searchProducts(query);
     }
-    @GetMapping("/modify-product")
+    @GetMapping("/modify")
     public String rechercherProduit(@RequestParam(required = false) Long productId, Model model) {
         model.addAttribute("notif", servNotification.nbNotif());
         model.addAttribute("cats", this.servProduit.getAllCats());
@@ -220,10 +229,15 @@ public class ProduitController {
         } else {
             model.addAttribute("product", new Produit());
         }
+        model.addAttribute("breadcrumbs", List.of(
+                "Gestion Commerciale",
+                "Produits et Stock",
+                "Modifier un produit"
+        ));
         return "gest/modifyProduct";
     }
 
-    @PostMapping("/modify-product/{id}")
+    @PostMapping("/{id}/modify")
     public String modifierProduit(@PathVariable long id,
                                   @RequestParam String ref,
                                   @RequestParam int idCat,
@@ -233,21 +247,21 @@ public class ProduitController {
                                   @RequestParam MultipartFile imagee,
                                   RedirectAttributes attributes) {
 
-        if (prixVente == null || prixVente.compareTo(BigDecimal.ZERO) <= 0|| quantite <= 0) {
-            attributes.addFlashAttribute("error", "Le prix et la quantité ne peuvent pas être négatifs ou null.");
-            return "redirect:/gharnata/modify-product?ref=" + ref;
+        if (prixVente == null || prixVente.compareTo(BigDecimal.ZERO) <= 0) {
+            attributes.addFlashAttribute("error", "Le prix ne peut pas être négatifs ou null.");
+            return "redirect:/products/modify?ref=" + ref;
         }
 
         Produit p = this.servProduit.getProductById(id);
         if (p == null) {
             attributes.addFlashAttribute("error", "Produit introuvable.");
-            return "redirect:/gharnata/modify-product";
+            return "redirect:/products/modify";
         }
 
         Categorie cat = this.servProduit.getCatById(idCat);
         if (cat == null) {
             attributes.addFlashAttribute("error", "Catégorie invalide.");
-            return "redirect:/gharnata/modify-product?ref=" + p.getRef();
+            return "redirect:/products/modify?ref=" + p.getRef();
         }
 
         p.setQuantite(p.getQuantite() + quantite);
@@ -259,7 +273,7 @@ public class ProduitController {
 
         if (pt == null) {
             attributes.addFlashAttribute("error", "Un problème est survenu lors de la modification.");
-            return "redirect:/gharnata/modify-product";
+            return "redirect:/products/modify";
         }
 
         if (!imagee.isEmpty()) {
@@ -270,7 +284,7 @@ public class ProduitController {
                     pt.setPic(this.servImage.treatPic(imagee));
                 } catch (Exception e) {
                     attributes.addFlashAttribute("error", "Un problème est survenu lors de la modification de l'image.");
-                    return "redirect:/gharnata/modify-product";
+                    return "redirect:/products/modify";
                 }
                 this.servProduit.addProduit(pt);
             }
@@ -280,19 +294,19 @@ public class ProduitController {
         if (pt.getQuantite() > 5) {
             this.servNotification.deletEnr(pt);
         }
-        return "redirect:/gharnata/modify-product";
+        return "redirect:/products/modify";
     }
 
-    @GetMapping("/delete-product/{page}/{id}")
+    @GetMapping("/{id}/delete/{page}")
     public String deletProduct(@PathVariable Long id, RedirectAttributes attributes, @PathVariable String page){
         Produit produit = this.servProduit.getProductById(id);
         this.servPanier.checkProductExi(produit);
         this.servNotification.checkProductExi(produit);
         this.servProduit.deletePrById(id);
         if(page.equals("list")){
-            return "redirect:/gharnata/show-products-stock";
+            return "redirect:/products/stock";
         }
-        return "redirect:/gharnata/show-products";
+        return "redirect:/products";
     }
     @PostMapping("/delete-products")
     public String supprimerProduits(@RequestParam("prod_ids") List<Long> ids) {
@@ -300,30 +314,11 @@ public class ProduitController {
         this.servPanier.checkProductsExi(lp);
         this.servNotification.checkProductsExi(lp);
         servProduit.deleteAllById(ids);
-        return "redirect:/gharnata/show-products-stock";
-    }
-    @GetMapping("/pass-mass")
-    public String passMass(Model model){
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        // Récupérez l'ID de l'utilisateur
-        String userId = authentication.getName();
-        List<PanierItems> panierItems = this.servPanier.getPanierItemsByAdm(userId);
-        List<ProductDTO> lPI = this.servProduit.getProductDTOs();
-        List<Integer> indexs =new ArrayList<>();
-        for (int i=1; i<=panierItems.size();i++){
-            indexs.add(i);
-        }
-        model.addAttribute("prodInfos", lPI);
-        model.addAttribute("items",panierItems);
-        model.addAttribute("mht", this.servPanier.calculPanierMss(panierItems));
-        model.addAttribute("idxs", indexs);
-        model.addAttribute("notif",servNotification.nbNotif());
-        model.addAttribute("cats", this.servProduit.getAllCats());
-        return "gest/passMasse";
+        return "redirect:/products";
     }
     @PostMapping("/add-categorie")
     public String addCat(@RequestParam String cat,
-                         @RequestParam(defaultValue = "/gharnata/add-product") String redirectTo,
+                         @RequestParam(defaultValue = "/products/add") String redirectTo,
                          @RequestHeader(value = "HX-Request", required = false) String hxRequest,
                          Model model) {
         this.servProduit.addCat(cat);
