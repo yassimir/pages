@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(
+          ~{::content},
+          ~{::modals},
+          ${breadcrumbs},
+          'Gharnata | État du stock',
+          ~{::pageCss},
+          ~{::pageJs}
+      )}">
+
+    <head>
+        <th:block th:fragment="pageCss">
+
+            <meta name="description" content="État du stock des produits Gharnata">
+
+            <style>
+                :root {
+                    --ink: #172033;
+                    --muted: #7e889d;
+                    --line: #e8ebf2;
+                    --surface: #fff;
+                    --canvas: #f5f7fb;
+                    --navy: #1c2742;
+                    --blue: #2850a7;
+                    --blue-soft: #edf3ff;
+                    --orange: #f59e0b;
+                    --green: #16a37a;
+                    --red: #e45f68;
+                    --shadow: 0 16px 40px rgba(35, 49, 85, .08)
+                }
+
+                * {
+                    box-sizing: border-box
+                }
+
+                body {
+                    margin: 0;
+                    background: var(--canvas);
+                    color: var(--ink);
+                    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    font-size: 14px
+                }
+
+                a {
+                    color: inherit;
+                    text-decoration: none
+                }
+
+                a:hover {
+                    text-decoration: none
+                }
+
+                .app-shell {
+                    min-height: 100vh;
+                    display: flex
+                }
+
+                .sidebar {
+                    width: 260px;
+                    flex: 0 0 260px;
+                    min-height: 100vh;
+                    background: var(--navy);
+                    color: #aeb9d0;
+                    padding: 22px 14px;
+                    position: fixed;
+                    z-index: 20;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    transition: transform .25s ease
+                }
+
+                .menu-label {
+                    padding: 0 14px;
+                    color: #6f7e9f;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 1.3px;
+                    margin: 19px 0 9px;
+                    font-weight: 700
+                }
+
+                .nav-list {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0
+                }
+
+                .nav-list li {
+                    margin: 3px 0
+                }
+
+                .nav-list > li > a, .nav-list .submenu a {
+                    display: flex;
+                    align-items: center;
+                    min-height: 45px;
+                    border-radius: 10px;
+                    padding: 0 14px;
+                    transition: all .2s
+                }
+
+                .nav-list > li > a:hover, .nav-list .submenu a:hover {
+                    background: rgba(255, 255, 255, .07);
+                    color: #fff
+                }
+
+                .nav-list > li > a i {
+                    width: 27px;
+                    color: #8493b2;
+                    font-size: 16px
+                }
+
+                .nav-list > li.active > a {
+                    background: linear-gradient(90deg, rgba(57, 119, 246, .25), rgba(57, 119, 246, .08));
+                    color: #fff;
+                    box-shadow: inset 3px 0 var(--blue)
+                }
+
+                .nav-list > li.active > a i {
+                    color: #73a0ff
+                }
+
+                .chevron {
+                    margin-left: auto !important;
+                    width: auto !important;
+                    font-size: 11px !important;
+                    color: #7483a2 !important
+                }
+
+                .submenu {
+                    list-style: none;
+                    margin: 2px 0 7px 27px;
+                    padding: 0 0 0 12px;
+                    border-left: 1px solid #34415e
+                }
+
+                .submenu a {
+                    min-height: 35px !important;
+                    font-size: 12px;
+                    padding: 0 10px !important
+                }
+
+                .submenu a.current {
+                    color: #80a7ff;
+                    font-weight: 600
+                }
+
+                .sidebar-bottom {
+                    position: absolute;
+                    left: 14px;
+                    right: 14px;
+                    bottom: 20px;
+                    border-top: 1px solid rgba(255, 255, 255, .08);
+                    padding: 17px 12px 0;
+                    color: #8492b0;
+                    font-size: 11px
+                }
+
+                .sidebar-bottom i {
+                    color: #63c99f;
+                    margin-right: 7px
+                }
+
+                .main {
+                    margin-left: 260px;
+                    width: calc(100% - 260px);
+                    min-width: 0
+                }
+
+                .topbar {
+                    height: 76px;
+                    background: rgba(255, 255, 255, .92);
+                    border-bottom: 1px solid var(--line);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0 4.2%;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                    backdrop-filter: blur(14px)
+                }
+
+                .mobile-toggle {
+                    border: 0;
+                    background: transparent;
+                    color: var(--ink);
+                    font-size: 21px;
+                    display: none
+                }
+
+                .crumbs {
+                    color: var(--muted);
+                    font-size: 13px
+                }
+
+                .crumbs i {
+                    margin: 0 10px;
+                    font-size: 10px
+                }
+
+                .crumbs strong {
+                    color: var(--ink);
+                    font-weight: 600
+                }
+
+                .top-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 19px
+                }
+
+                .icon-btn {
+                    position: relative;
+                    color: #77839a;
+                    font-size: 18px
+                }
+
+                .notification {
+                    position: absolute;
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: var(--red);
+                    top: 0;
+                    right: -3px;
+                    border: 2px solid #fff;
+                    box-sizing: content-box
+                }
+
+                .profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    border-left: 1px solid var(--line);
+                    padding-left: 18px
+                }
+
+                .profile img {
+                    width: 35px;
+                    height: 35px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    background: #e9eef9
+                }
+
+                .profile-name {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--ink)
+                }
+
+                .profile-role {
+                    display: block;
+                    color: var(--muted);
+                    font-size: 11px;
+                    margin-top: 2px
+                }
+
+                .page {
+                    padding: 38px 4.2% 32px;
+                    max-width: 1500px
+                }
+
+                .page-heading {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: space-between;
+                    margin-bottom: 27px
+                }
+
+                .eyebrow {
+                    color: var(--blue);
+                    font-size: 11px;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 1.5px;
+                    margin: 0 0 9px
+                }
+
+                h1 {
+                    font-size: 28px;
+                    margin: 0;
+                    letter-spacing: -.7px;
+                    font-weight: 750
+                }
+
+                .subtitle {
+                    margin: 8px 0 0;
+                    color: var(--muted);
+                    font-size: 14px
+                }
+
+                .primary-btn {
+                    background: var(--blue);
+                    color: #fff;
+                    border-radius: 9px;
+                    padding: 12px 17px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    box-shadow: 0 7px 15px rgba(57, 119, 246, .2)
+                }
+
+                .primary-btn i {
+                    margin-right: 7px
+                }
+
+                .toolbar {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 16px;
+                    padding: 19px 21px;
+                    box-shadow: var(--shadow);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 15px;
+                    margin-bottom: 22px
+                }
+
+                .search-form {
+                    display: flex;
+                    max-width: 620px;
+                    flex: 1
+                }
+
+                .search-input {
+                    height: 45px;
+                    border: 1px solid #dfe4ee;
+                    border-right: 0;
+                    border-radius: 9px 0 0 9px;
+                    background: #fbfcfe;
+                    padding: 0 14px;
+                    outline: none;
+                    flex: 1;
+                    color: var(--ink);
+                    font-size: 13px
+                }
+
+                .search-input:focus {
+                    border-color: #7ea5fc;
+                    box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
+                    background: #fff
+                }
+
+                .search-btn {
+                    width: 49px;
+                    border: 0;
+                    border-radius: 0 9px 9px 0;
+                    background: var(--navy);
+                    color: #fff;
+                    font-size: 15px
+                }
+
+                .stock-meta {
+                    color: var(--muted);
+                    font-size: 12px;
+                    white-space: nowrap
+                }
+
+                .stock-meta i {
+                    color: var(--blue);
+                    margin-right: 6px
+                }
+
+                .stock-panel {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 16px;
+                    padding: 26px 25px 22px;
+                    box-shadow: var(--shadow)
+                }
+
+                .panel-head {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 21px
+                }
+
+                .panel-head h2 {
+                    font-size: 17px;
+                    margin: 0;
+                    font-weight: 700
+                }
+
+                .panel-head p {
+                    margin: 5px 0 0;
+                    color: var(--muted);
+                    font-size: 11px
+                }
+
+                .stock-table-wrap {
+                    overflow-x: auto;
+                    border: 1px solid var(--line);
+                    border-radius: 12px
+                }
+
+                .stock-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    min-width: 790px
+                }
+
+                .stock-table thead {
+                    background: #f8f9fc
+                }
+
+                .stock-table th {
+                    color: #7a859a;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: .7px;
+                    font-weight: 800;
+                    padding: 14px 15px;
+                    text-align: left;
+                    border-bottom: 1px solid var(--line);
+                    white-space: nowrap
+                }
+
+                .stock-table td {
+                    padding: 15px;
+                    border-bottom: 1px solid var(--line);
+                    vertical-align: middle;
+                    font-size: 12px;
+                    color: #58657c
+                }
+
+                .stock-table tbody tr:last-child td {
+                    border-bottom: 0
+                }
+
+                .stock-table tbody tr:hover {
+                    background: #fbfcff
+                }
+
+                .stock-table td:first-child, .stock-table th:first-child {
+                    width: 42px;
+                    text-align: center
+                }
+
+                .product-ref {
+                    color: var(--blue);
+                    font-weight: 700
+                }
+
+                .product-name {
+                    color: var(--ink);
+                    font-weight: 700
+                }
+
+                .category {
+                    color: #718099;
+                    background: #f2f4f8;
+                    border-radius: 20px;
+                    padding: 5px 9px;
+                    font-size: 10px;
+                    display: inline-block
+                }
+
+                .quantity {
+                    font-weight: 800;
+                    color: var(--green)
+                }
+
+                .quantity.low {
+                    color: var(--orange)
+                }
+
+                .price {
+                    color: var(--ink);
+                    font-weight: 700
+                }
+
+                .row-number {
+                    color: #a2adbf;
+                    font-size: 11px
+                }
+
+                .custom-checkbox {
+                    width: 16px;
+                    height: 16px;
+                    accent-color: var(--blue);
+                    cursor: pointer
+                }
+
+                .delete-one {
+                    width: 31px;
+                    height: 31px;
+                    border: 0;
+                    border-radius: 7px;
+                    background: #fff0f1;
+                    color: var(--red);
+                    display: inline-grid;
+                    place-items: center
+                }
+
+                .delete-one:hover {
+                    background: var(--red);
+                    color: #fff
+                }
+
+                .bulk-bar {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-top: 17px;
+                    padding-top: 17px;
+                    border-top: 1px solid var(--line)
+                }
+
+                .selection-note {
+                    color: var(--muted);
+                    font-size: 11px
+                }
+
+                .selection-note i {
+                    color: var(--blue);
+                    margin-right: 5px
+                }
+
+                .bulk-delete {
+                    border: 0;
+                    border-radius: 8px;
+                    background: #fff0f1;
+                    color: #b24653;
+                    padding: 10px 14px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    transition: .2s
+                }
+
+                .bulk-delete:not(:disabled):hover {
+                    background: var(--red);
+                    color: #fff
+                }
+
+                .bulk-delete:disabled {
+                    opacity: .45;
+                    cursor: not-allowed
+                }
+
+                .empty-state {
+                    padding: 55px 20px;
+                    text-align: center;
+                    color: var(--muted)
+                }
+
+                .empty-state i {
+                    font-size: 38px;
+                    color: #c9d5eb;
+                    margin-bottom: 15px
+                }
+
+                .empty-state h3 {
+                    color: #4d5a72;
+                    font-size: 16px;
+                    margin: 0 0 7px
+                }
+
+                .empty-state p {
+                    font-size: 12px;
+                    margin: 0
+                }
+
+                .footer {
+                    color: #a2aabd;
+                    font-size: 11px;
+                    text-align: center;
+                    padding: 32px 0 4px
+                }
+
+                .modal-content {
+                    border: 0;
+                    border-radius: 16px;
+                    box-shadow: var(--shadow)
+                }
+
+                .modal-header, .modal-footer {
+                    border-color: var(--line);
+                    padding: 18px 22px
+                }
+
+                .modal-title {
+                    font-size: 17px;
+                    font-weight: 700
+                }
+
+                .modal-body {
+                    padding: 22px
+                }
+
+                .modal .close {
+                    font-size: 24px;
+                    font-weight: 400;
+                    color: #9ba5b8
+                }
+
+                .control {
+                    width: 100%;
+                    height: 47px;
+                    border: 1px solid #dfe4ee;
+                    border-radius: 9px;
+                    color: var(--ink);
+                    background: #fbfcfe;
+                    padding: 0 14px;
+                    outline: none;
+                    font-size: 13px
+                }
+
+                .check-row {
+                    display: flex;
+                    gap: 25px;
+                    margin-top: 14px
+                }
+
+                .check-row label {
+                    font-weight: 500;
+                    font-size: 12px;
+                    color: #46526b
+                }
+
+                @media (max-width: 780px) {
+                    .sidebar {
+                        transform: translateX(-100%);
+                        box-shadow: 10px 0 30px rgba(0, 0, 0, .15)
+                    }
+
+                    .sidebar.open {
+                        transform: translateX(0)
+                    }
+
+                    .main {
+                        margin-left: 0;
+                        width: 100%
+                    }
+
+                    .mobile-toggle {
+                        display: block;
+                        margin-right: 14px
+                    }
+
+                    .topbar {
+                        padding: 0 20px
+                    }
+
+                    .crumbs {
+                        display: none
+                    }
+
+                    .page {
+                        padding: 28px 18px
+                    }
+
+                    .page-heading {
+                        display: block
+                    }
+
+                    .primary-btn {
+                        display: inline-block;
+                        margin-top: 18px
+                    }
+
+                    .toolbar {
+                        align-items: stretch;
+                        flex-direction: column
+                    }
+
+                    .search-form {
+                        max-width: none
+                    }
+
+                    .stock-meta {
+                        padding-left: 2px
+                    }
+                }
+
+                @media (max-width: 560px) {
+                    h1 {
+                        font-size: 24px
+                    }
+
+                    .profile-name, .profile-role {
+                        display: none
+                    }
+
+                    .profile {
+                        padding-left: 10px
+                    }
+
+                    .stock-panel {
+                        padding: 20px 15px
+                    }
+
+                    .panel-head {
+                        display: block
+                    }
+
+                    .panel-head p {
+                        margin-top: 7px
+                    }
+
+                    .bulk-bar {
+                        display: block
+                    }
+
+                    .bulk-delete {
+                        width: 100%;
+                        margin-top: 12px
+                    }
+
+                    .search-input {
+                        min-width: 0
+                    }
+                }
+            </style>
+        </th:block>
+    </head>
+    <body>
+        <th:block th:fragment="content">
+            <section class="page">
+                <div class="page-heading">
+                    <div><p class="eyebrow">Inventaire</p>
+                        <h1>État du stock</h1>
+                        <p class="subtitle">Visualisez, recherchez et gérez les quantités disponibles dans votre
+                            inventaire.</p></div>
+                    <a class="primary-btn" th:href="@{/products/add}"><i class="fa fa-plus"></i> Ajouter un produit</a>
+                </div>
+                <div class="toolbar">
+                    <form class="search-form" th:action="@{/products/stock}" method="post"><input list="codes"
+                                                                                                                class="search-input"
+                                                                                                                name="ref"
+                                                                                                                placeholder="Rechercher par référence ou nom de produit"
+                                                                                                                required
+                                                                                                                autofocus>
+                        <datalist id="codes">
+                            <th:block th:each="product : ${prods}">
+                                <option th:value="${product.ref}" th:text="${product.name}"></option>
+                            </th:block>
+                        </datalist>
+                        <button class="search-btn" type="submit" aria-label="Rechercher"><i class="fa fa-search"></i>
+                        </button>
+                    </form>
+                    <div class="stock-meta"><i class="fa fa-bar-chart"></i> Suivi des disponibilités</div>
+                </div>
+                <div class="stock-panel">
+                    <div class="panel-head">
+                        <div><h2>Produits en stock</h2>
+                            <p>Sélectionnez plusieurs produits pour effectuer une suppression groupée.</p></div>
+                    </div>
+                    <form th:action="@{/products/delete-products}" method="post" id="stockForm">
+                        <div class="stock-table-wrap">
+                            <table class="stock-table">
+                                <thead>
+                                <tr>
+                                    <th><input type="checkbox" id="selectAll" class="custom-checkbox"
+                                               aria-label="Tout sélectionner"></th>
+                                    <th>Nº</th>
+                                    <th>Référence</th>
+                                    <th>Désignation</th>
+                                    <th>Quantité</th>
+                                    <th>Prix unitaire</th>
+                                    <th>Catégorie</th>
+                                    <th>Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <th:block th:each="prod, index1 : ${products}">
+                                    <tr>
+                                        <td><input type="checkbox" name="prod_ids" th:value="${prod.id}"
+                                                   class="custom-checkbox product-check"
+                                                   aria-label="Sélectionner ce produit"></td>
+                                        <td class="row-number" th:text="${idxs[__${index1.index}__]}"></td>
+                                        <td><a class="product-ref"
+                                               th:href="@{/products/{id}/details(id=${prod.id})}"
+                                               th:text="${prod.ref}"></a></td>
+                                        <td class="product-name" th:text="${prod.name}"></td>
+                                        <td><span class="quantity" th:classappend="${prod.quantite < 10} ? ' low' : ''"
+                                                  th:text="${prod.quantite}"></span></td>
+                                        <td class="price" th:text="${prod.prixVente}"></td>
+                                        <td><span class="category" th:text="${prod.categorie.lib}"></span></td>
+                                        <td><a class="delete-one"
+                                               th:href="@{/products/{id}/delete/list(id=${prod.id})}"
+                                               onclick="return confirm('Voulez vous vraiment supprimer ce produit?');"
+                                               aria-label="Supprimer ce produit"><i class="fa fa-trash"></i></a></td>
+                                    </tr>
+                                </th:block>
+                                <tr th:if="${products == null or #lists.isEmpty(products)}">
+                                    <td colspan="8">
+                                        <div class="empty-state"><i class="fa fa-cubes"></i>
+                                            <h3>Aucun produit trouvé</h3>
+                                            <p>Ajoutez un produit ou modifiez votre recherche.</p></div>
+                                    </td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bulk-bar"><span class="selection-note"><i class="fa fa-info-circle"></i> <span
+                                id="selectionText">Aucun produit sélectionné</span></span>
+                            <button type="submit" id="delete-btn" class="bulk-delete" disabled
+                                    onclick="return confirm('Voulez vous vraiment supprimer ces produits?');"><i
+                                    class="fa fa-trash"></i> Supprimer la sélection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
+            </section>
+        </th:block>
+        <th:block th:fragment="modals">
+
+        </th:block>
+        <th:block th:fragment="pageJs">
+            <script>
+                (function () {
+                    var sidebar = document.getElementById('sidebar'), toggle = document.getElementById('sidebarToggle');
+                    if (toggle) toggle.addEventListener('click', function () {
+                        sidebar.classList.toggle('open')
+                    });
+                    document.addEventListener('click', function (e) {
+                        if (window.innerWidth <= 780 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) sidebar.classList.remove('open')
+                    });
+                    var checks = document.querySelectorAll('.product-check'), all = document.getElementById('selectAll'),
+                        button = document.getElementById('delete-btn'), text = document.getElementById('selectionText');
+
+                    function update() {
+                        var count = document.querySelectorAll('.product-check:checked').length;
+                        button.disabled = count === 0;
+                        text.textContent = count ? count + ' produit' + (count > 1 ? 's' : '') + ' sélectionné' + (count > 1 ? 's' : '') : 'Aucun produit sélectionné';
+                        if (all) all.checked = checks.length > 0 && count === checks.length
+                    }
+
+                    checks.forEach(function (c) {
+                        c.addEventListener('change', update)
+                    });
+                    if (all) all.addEventListener('change', function () {
+                        checks.forEach(function (c) {
+                            c.checked = all.checked
+                        });
+                        update()
+                    });
+                }());
+            </script>
+        </th:block>
+    </body>
+</html>

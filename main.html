@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      th:fragment="layout(content, modals, breadcrumbs, pageTitle, pageCss, pageJs)">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}">
+    <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}">
+
+    <title th:text="${pageTitle != null ? pageTitle : 'Gharnata Stock'}">
+        Gharnata Stock
+    </title>
+
+
+    <!-- CSS commun -->
+    <link rel="stylesheet" th:href="@{/assets/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/assets/css/font-awesome.min.css}">
+    <link rel="stylesheet" th:href="@{/assets/css/payment-details.css}">
+    <style>
+        .brand {
+            height: 58px;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            margin-bottom: 30px;
+        }
+
+        .brand a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: fit-content;
+            min-height: 49px;
+            margin-right: 11px;
+            gap: 0;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+
+        /*.brand a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 49px;
+            height: 49px;
+            margin-right: 11px;
+            flex-shrink: 0;
+        }*/
+
+        /*.brand strong {
+            color: #fff;
+            font-size: 17px;
+            display: block;
+            line-height: 1.1;
+        }
+
+        .brand small {
+            color: #8492b0;
+            font-size: 10px;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+        }*/
+        .brand strong {
+            color: #fff;
+            font-size: 17px;
+            display: block;
+            line-height: 1.1;
+        }
+
+        .brand small {
+            color: #8492b0;
+            font-size: 10px;
+            letter-spacing: 1.3px;
+            text-transform: uppercase;
+            display: block;
+        }
+
+        /*.brand img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            padding: 3px;
+            background: #fff;
+            border-radius: 13px;
+        }*/
+
+
+        .brand img {
+            display: block;
+            width: 48px;
+            height: 48px;
+            max-width: none;
+            object-fit: contain;
+            padding: 3px;
+            margin: 0 11px 0 0;
+            background: #fff;
+            border-radius: 13px;
+            box-sizing: border-box;
+            flex-shrink: 0;
+        }
+    </style>
+
+    <!-- CSS spécifique à chaque page -->
+    <th:block th:replace="${pageCss}"></th:block>
+
+    <!-- PWA -->
+    <link rel="manifest" th:href="@{/manifest.json}">
+
+    <meta name="theme-color" content="#0d6efd">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Gestion de stock">
+
+    <!--<link rel="apple-touch-icon"
+          th:href="@{/icons/icon-192.png}">-->
+    <!-- iPhone / iPad -->
+    <link rel="apple-touch-icon"
+          sizes="180x180"
+          th:href="@{/icons/icon-180.png}">
+
+    <!-- Favicon -->
+    <link rel="icon"
+          type="image/png"
+          sizes="32x32"
+          th:href="@{/icons/favicon-32.png}">
+
+    <link rel="icon"
+          type="image/png"
+          sizes="16x16"
+          th:href="@{/icons/favicon-16.png}">
+
+    <!-- Couleurs et affichage mobile -->
+    <meta name="theme-color" content="#0d6efd">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="Gharnata">
+
+
+</head>
+
+<body>
+
+<div class="app-shell">
+
+    <!-- Sidebar -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+
+    <main class="main">
+
+        <!-- Navbar -->
+        <div th:replace="~{fragments/navbar :: navbar(${breadcrumbs})}"></div>
+
+        <!-- Contenu de la page -->
+        <section>
+            <th:block th:replace="${content}"></th:block>
+        </section>
+    </main>
+</div>
+<th:block th:replace="${modals}"></th:block>
+<div class="modal fade" id="addCat" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h4 class="modal-title">Ajouter une catégorie</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="post" role="form" th:action="@{/products/add-categorie}"
+                  hx-post="/products/add-categorie"
+                  hx-target="#cat-select-container"
+                  hx-swap="outerHTML"
+                  hx-on::after-request="if(event.detail.successful){ $('#addCat').modal('hide'); this.reset(); }">
+                <div class="modal-body">
+                    <label for="cat">Nom de la catégorie</label>
+                    <input type="text" class="control" id="cat" placeholder="Ex. Revêtement mural" name="cat" required>
+                    <input type="hidden" name="redirectTo" value="/clients/add">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-plus mr-1"></i> Ajouter</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="loadProds" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header"><h4 class="modal-title">Télécharger la liste des produits</h4>
+                <button type="button" class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <form method="post" role="form" th:action="@{/factures/load-prods}">
+                <div class="modal-body"><label for="idCat">Catégorie</label><select class="control" name="idCat"
+                                                                                    id="idCat" required>
+                    <option value="0">Toutes les catégories</option>
+                    <th:block th:each="cat : ${cats}">
+                        <option th:value="${cat.id}" th:text="${cat.lib}"></option>
+                    </th:block>
+                </select>
+                    <div class="check-row"><label><input type="checkbox" id="qt" name="qt" checked>
+                        Quantité</label><label><input type="checkbox" id="pr" name="pr" checked> Prix</label></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-primary"><i class="fa fa-download"></i> Télécharger</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Fenêtres de notifications après connexion -->
+<div th:replace="~{fragments/paymentLoginNotifications :: paymentLoginNotifications}"></div>
+
+<!-- Modale de détails d'un paiement -->
+<div th:replace="~{fragments/paymentDetailsModal :: paymentDetailsModal}"></div>
+
+<!-- Bibliothèques JS communes : respecter cet ordre -->
+<script th:src="@{/assets/js/jquery.min.js}"></script>
+<script th:src="@{/assets/js/popper.min.js}"></script>
+<script th:src="@{/assets/js/bootstrap.min.js}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/htmx/1.9.12/htmx.min.js"></script>
+
+<!-- JS commun -->
+<script th:src="@{/assets/js/notification-filters.js}"></script>
+<script th:src="@{/assets/js/payment-notifications.js}"></script>
+<script th:src="@{/assets/js/payment-details.js}"></script>
+<script th:src="@{/assets/js/payment-login-notifications.js}"></script>
+
+
+<!-- JS spécifique à chaque page -->
+<th:block th:replace="${pageJs}"></th:block>
+
+<script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function (registration) {
+                    console.log(
+                        "Service Worker enregistré :",
+                        registration.scope
+                    );
+                })
+                .catch(function (error) {
+                    console.error(
+                        "Erreur Service Worker :",
+                        error
+                    );
+                });
+        });
+    }
+</script>
+
+</body>
+</html>
