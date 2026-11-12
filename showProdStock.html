@@ -622,30 +622,6 @@
                     color: #46526b
                 }
 
-                .pagination-toolbar {
-                    display: flex;
-                    justify-content: flex-end;
-                    margin-bottom: 18px;
-                }
-
-                .page-size-form {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                    color: var(--muted);
-                    font-size: 12px;
-                }
-
-                .page-size-form select {
-                    height: 36px;
-                    border: 1px solid var(--line);
-                    border-radius: 8px;
-                    padding: 0 10px;
-                    color: var(--ink);
-                    background: #fff;
-                    outline: none;
-                }
-
                 .pagination-container {
                     display: flex;
                     align-items: center;
@@ -800,8 +776,6 @@
                                placeholder="Rechercher par référence ou nom de produit"
                                autofocus>
 
-                        <input type="hidden" name="size" th:value="${pageSize}">
-
                         <button class="search-btn" type="submit" aria-label="Rechercher">
                             <i class="fa fa-search"></i>
                         </button>
@@ -820,19 +794,6 @@
                                 <span th:text="${currentPage * pageSize + products.size()}"></span>.
                             </p>
                         </div>
-                    </div>
-                    <div class="pagination-toolbar">
-                        <form th:action="@{/products/stock}" method="get" class="page-size-form">
-                            <input type="hidden" name="ref" th:value="${search}">
-
-                            <label for="pageSize">Produits par page :</label>
-
-                            <select id="pageSize" name="size" onchange="this.form.submit()">
-                                <option value="20" th:selected="${pageSize == 20}">20</option>
-                                <option value="40" th:selected="${pageSize == 40}">40</option>
-                                <option value="80" th:selected="${pageSize == 80}">80</option>
-                            </select>
-                        </form>
                     </div>
                     <form th:action="@{/products/delete-products}" method="post" id="stockForm">
                         <div class="stock-table-wrap">
@@ -894,7 +855,7 @@
                         <a class="page-btn"
                            th:classappend="${currentPage == 0} ? ' disabled' : ''"
                            th:if="${currentPage > 0}"
-                           th:href="@{/products/stock(page=${currentPage - 1}, size=${pageSize}, ref=${search})}">
+                           th:href="@{/products/stock(page=${currentPage - 1}, ref=${search})}">
                             <i class="fa fa-chevron-left"></i> Précédent
                         </a>
 
@@ -905,7 +866,7 @@
 
                         <a class="page-btn"
                            th:if="${currentPage + 1 < totalPages}"
-                           th:href="@{/products/stock(page=${currentPage + 1}, size=${pageSize}, ref=${search})}">
+                           th:href="@{/products/stock(page=${currentPage + 1}, ref=${search})}">
                             Suivant <i class="fa fa-chevron-right"></i>
                         </a>
 

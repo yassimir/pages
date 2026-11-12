@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(
+          ~{::content},
+          ~{::modals},
+          ${breadcrumbs},
+          'Gharnata | Modifier un produit',
+          ~{::pageCss},
+          ~{::pageJs}
+      )}">
+    <head>
+        <th:block th:fragment="pageCss">
+
+            <meta name="description" content="Modifier un produit Gharnata">
+            <style>
+                :root {
+                    --ink: #172033;
+                    --muted: #7e889d;
+                    --line: #e8ebf2;
+                    --surface: #ffffff;
+                    --canvas: #f5f7fb;
+                    --navy: #1c2742;
+                    --navy-2: #283657;
+                    --blue: #3977f6;
+                    --blue-soft: #edf3ff;
+                    --orange: #f59e0b;
+                    --green: #16a37a;
+                    --red: #e45f68;
+                    --shadow: 0 16px 40px rgba(35, 49, 85, .08);
+                }
+
+                * {
+                    box-sizing: border-box;
+                }
+
+                body {
+                    margin: 0;
+                    background: var(--canvas);
+                    color: var(--ink);
+                    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    font-size: 14px;
+                }
+                .search-wrapper {
+                    position: relative;
+                    flex: 1;
+                }
+
+                #productSuggestions {
+                    margin: 0;
+                    padding: 0;
+                    list-style: none;
+                }
+                #productSuggestions .list-group-item {
+                    cursor: pointer;
+                    background-color: rgba(216, 215, 215, 0.96);
+                    color: #212529;
+                    border-color: rgba(204, 202, 202, 0.94);
+                    transition: background-color 0.15s ease;
+                }
+
+                #productSuggestions .list-group-item:hover {
+                    background-color: #cccbcb;
+                }
+
+                #productSuggestions .list-group-item small {
+                    color: #3e4243 !important;
+                }
+
+                /*#productSuggestions .list-group-item {
+                    cursor: pointer;
+                    background-color: #d8dadd;
+                }
+
+                #productSuggestions .list-group-item:hover {
+                    background-color: #b8bcc5;
+                }*/
+
+                a {
+                    color: inherit;
+                    text-decoration: none;
+                }
+
+                a:hover {
+                    text-decoration: none;
+                }
+
+                .app-shell {
+                    min-height: 100vh;
+                    display: flex;
+                }
+
+                .sidebar {
+                    width: 260px;
+                    flex: 0 0 260px;
+                    min-height: 100vh;
+                    background: var(--navy);
+                    color: #aeb9d0;
+                    padding: 22px 14px;
+                    position: fixed;
+                    z-index: 20;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    transition: transform .25s ease;
+                }
+
+                .menu-label {
+                    padding: 0 14px;
+                    color: #6f7e9f;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 1.3px;
+                    margin: 19px 0 9px;
+                    font-weight: 700;
+                }
+
+                .nav-list {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0;
+                }
+
+                .nav-list li {
+                    margin: 3px 0;
+                }
+
+                .nav-list > li > a, .nav-list .submenu a {
+                    display: flex;
+                    align-items: center;
+                    min-height: 45px;
+                    border-radius: 10px;
+                    padding: 0 14px;
+                    transition: all .2s;
+                }
+
+                .nav-list > li > a:hover, .nav-list .submenu a:hover {
+                    background: rgba(255, 255, 255, .07);
+                    color: #fff;
+                }
+
+                .nav-list > li > a i {
+                    width: 27px;
+                    color: #8493b2;
+                    font-size: 16px;
+                }
+
+                .nav-list > li.active > a {
+                    background: linear-gradient(90deg, rgba(57, 119, 246, .25), rgba(57, 119, 246, .08));
+                    color: #fff;
+                    box-shadow: inset 3px 0 var(--blue);
+                }
+
+                .nav-list > li.active > a i {
+                    color: #73a0ff;
+                }
+
+                .nav-list .chevron {
+                    margin-left: auto;
+                    font-size: 11px;
+                    color: #7483a2;
+                }
+
+                .submenu {
+                    list-style: none;
+                    margin: 2px 0 7px 27px;
+                    padding: 0 0 0 12px;
+                    border-left: 1px solid #34415e;
+                }
+
+                .submenu a {
+                    min-height: 35px !important;
+                    font-size: 12px;
+                    padding: 0 10px !important;
+                }
+
+                .submenu a.current {
+                    color: #80a7ff;
+                    font-weight: 600;
+                }
+
+                .sidebar-bottom {
+                    position: absolute;
+                    left: 14px;
+                    right: 14px;
+                    bottom: 20px;
+                    border-top: 1px solid rgba(255, 255, 255, .08);
+                    padding: 17px 12px 0;
+                    color: #8492b0;
+                    font-size: 11px;
+                }
+
+                .sidebar-bottom i {
+                    color: #63c99f;
+                    margin-right: 7px;
+                }
+
+                .main {
+                    margin-left: 260px;
+                    width: calc(100% - 260px);
+                    min-width: 0;
+                }
+
+                .topbar {
+                    height: 76px;
+                    background: rgba(255, 255, 255, .92);
+                    border-bottom: 1px solid var(--line);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0 4.2%;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                    backdrop-filter: blur(14px);
+                }
+
+                .mobile-toggle {
+                    border: 0;
+                    background: transparent;
+                    color: var(--ink);
+                    font-size: 21px;
+                    display: none;
+                }
+
+                .crumbs {
+                    color: var(--muted);
+                    font-size: 13px;
+                }
+
+                .crumbs i {
+                    margin: 0 10px;
+                    font-size: 10px;
+                }
+
+                .crumbs strong {
+                    color: var(--ink);
+                    font-weight: 600;
+                }
+
+                .top-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 19px;
+                }
+
+                .icon-btn {
+                    position: relative;
+                    color: #77839a;
+                    font-size: 18px;
+                }
+
+                .notification {
+                    position: absolute;
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: var(--red);
+                    top: 0;
+                    right: -3px;
+                    border: 2px solid #fff;
+                    box-sizing: content-box;
+                }
+
+                .profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    border-left: 1px solid var(--line);
+                    padding-left: 18px;
+                }
+
+                .profile img {
+                    width: 35px;
+                    height: 35px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    background: #e9eef9;
+                }
+
+                .profile-name {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--ink);
+                }
+
+                .profile-role {
+                    display: block;
+                    color: var(--muted);
+                    font-size: 11px;
+                    margin-top: 2px;
+                }
+
+                .page {
+                    padding: 38px 4.2% 32px;
+                    max-width: 1440px;
+                }
+
+                .page-heading {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: space-between;
+                    margin-bottom: 27px;
+                }
+
+                .eyebrow {
+                    color: var(--blue);
+                    font-size: 11px;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 1.5px;
+                    margin: 0 0 9px;
+                }
+
+                h1 {
+                    font-size: 28px;
+                    margin: 0;
+                    letter-spacing: -.7px;
+                    color: var(--ink);
+                    font-weight: 750;
+                }
+
+                .subtitle {
+                    margin: 8px 0 0;
+                    color: var(--muted);
+                    font-size: 14px;
+                }
+
+                .back-link {
+                    color: var(--muted);
+                    font-size: 13px;
+                    padding-top: 8px;
+                }
+
+                .back-link i {
+                    margin-right: 6px;
+                }
+
+                .alert {
+                    border: 0;
+                    border-radius: 12px;
+                    padding: 13px 17px;
+                    margin-bottom: 20px;
+                    box-shadow: 0 6px 18px rgba(30, 40, 70, .06);
+                }
+
+                .alert-danger {
+                    color: #a23e4b;
+                    background: #fff0f1;
+                }
+
+                .alert-success {
+                    color: #14795d;
+                    background: #eafaf4;
+                }
+                .product-icon {
+                    width: 43px;
+                    height: 43px;
+                    border-radius: 12px;
+                    background: var(--blue-soft);
+                    color: var(--blue);
+                    display: grid;
+                    place-items: center;
+                    font-size: 19px;
+                    flex: 0 0 43px;
+                }
+                .mobile-break {
+                    display: none;
+                }
+
+                .workspace {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) 290px;
+                    gap: 22px;
+                    align-items: start;
+                }
+
+                .card {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 16px;
+                    box-shadow: var(--shadow);
+                }
+
+                .form-card {
+                    padding: 27px 29px 30px;
+                }
+                .required{
+                    color: #bf3131;
+                }
+
+                /*.card-head {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding-bottom: 20px;
+                    border-bottom: 1px solid var(--line);
+                    margin-bottom: 24px;
+                }*/
+                .card-head {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: stretch;
+                    padding-bottom: 20px;
+                    border-bottom: 1px solid var(--line);
+                    margin-bottom: 24px;
+                    gap: 12px;
+                }
+                .card-head .card-label {
+                    margin: 0;
+                }
+
+                .card-head .search-form {
+                    width: 100%;
+                }
+
+
+                .card-head h2 {
+                    margin: 0;
+                }
+
+                .card-head .required-note {
+                    align-self: flex-start;
+                }
+
+                .card-head > p:last-child {
+                    margin: 0;
+                }
+                .card-title-row {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                }
+
+                .card-title-row h2 {
+                    margin: 0;
+                }
+                .form-description {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    width: 100%;
+                }
+
+                .required-note {
+                    white-space: nowrap;
+                }
+
+
+                /*.card-head h2 {
+                    margin: 0;
+                    font-size: 17px;
+                    font-weight: 700;
+                }
+
+                .required-note {
+                    color: var(--muted);
+                    font-size: 11px;
+                }
+
+                .required-note b {
+                    color: var(--red);
+                }*/
+
+                .fields {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 21px 19px;
+                }
+
+                .field {
+                    min-width: 0;
+                }
+
+                .field.full {
+                    grid-column: 1 / -1;
+                }
+
+                label {
+                    color: #46526b;
+                    display: block;
+                    font-size: 12px;
+                    font-weight: 700;
+                    margin: 0 0 8px;
+                }
+
+                label .star {
+                    color: var(--red);
+                }
+
+                .field-hint {
+                    color: var(--muted);
+                    font-size: 11px;
+                    font-weight: 400;
+                    margin-left: 5px;
+                }
+
+                .control {
+                    width: 100%;
+                    height: 47px;
+                    border: 1px solid #dfe4ee;
+                    border-radius: 9px;
+                    color: var(--ink);
+                    background: #fbfcfe;
+                    padding: 0 14px;
+                    outline: none;
+                    transition: .2s;
+                    font-size: 13px;
+                }
+
+                .control:focus {
+                    border-color: #7ea5fc;
+                    box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
+                    background: #fff;
+                }
+                .search-btn {
+                    height: 47px;
+                    border: 0;
+                    border-radius: 9px;
+                    background: var(--navy);
+                    color: #fff;
+                    font-size: 16px
+                }
+
+                select.control {
+                    appearance: auto;
+                }
+
+                .input-with-icon {
+                    position: relative;
+                }
+
+                .input-with-icon .control {
+                    padding-right: 40px;
+                }
+
+                .input-with-icon i {
+                    position: absolute;
+                    right: 15px;
+                    top: 16px;
+                    color: #a1aabd;
+                }
+
+                .upload-box {
+                    min-height: 112px;
+                    border: 1px dashed #c9d2e2;
+                    border-radius: 10px;
+                    display: flex;
+                    align-items: center;
+                    padding: 15px;
+                    background: #fbfcff;
+                    cursor: pointer;
+                    position: relative;
+                }
+
+                .upload-box:hover {
+                    border-color: var(--blue);
+                    background: var(--blue-soft);
+                }
+
+                .upload-icon {
+                    width: 42px;
+                    height: 42px;
+                    border-radius: 10px;
+                    background: var(--blue-soft);
+                    color: var(--blue);
+                    display: grid;
+                    place-items: center;
+                    font-size: 18px;
+                    margin-right: 12px;
+                    flex-shrink: 0;
+                }
+
+                .upload-copy strong {
+                    display: block;
+                    color: #4a5872;
+                    font-size: 12px;
+                    margin-bottom: 4px;
+                }
+
+                .upload-copy span {
+                    color: var(--muted);
+                    font-size: 11px;
+                }
+
+                .upload-box input {
+                    position: absolute;
+                    inset: 0;
+                    opacity: 0;
+                    cursor: pointer;
+                }
+                .upload-preview {
+                    width: 65px;
+                    height: 65px;
+                    object-fit: cover;
+                    border-radius: 8px;
+                    margin-right: 12px;
+                    flex-shrink: 0;
+                }
+
+                .form-footer {
+                    border-top: 1px solid var(--line);
+                    margin-top: 27px;
+                    padding-top: 22px;
+                    display: flex;
+                    justify-content: flex-end;
+                    gap: 11px;
+                }
+
+                /*.btn {
+                    border-radius: 9px;
+                    min-height: 43px;
+                    padding: 0 19px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    border: 0;
+                    transition: transform .15s, box-shadow .15s;
+                }*/
+                .btn {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    vertical-align: middle;
+                    border-radius: 9px;
+                    min-height: 43px;
+                    padding: 0 19px;
+                    font-size: 13px;
+                    font-weight: 700;
+                    border: 0;
+                    transition: transform .15s, box-shadow .15s;
+                }
+
+                .btn:hover {
+                    transform: translateY(-1px);
+                }
+
+                .btn-light {
+                    color: #69758d;
+                    background: #f1f3f7;
+                }
+
+                .btn-primary {
+                    color: white;
+                    background: var(--blue);
+                    box-shadow: 0 7px 15px rgba(57, 119, 246, .2);
+                }
+
+                .btn-primary i {
+                    margin-right: 7px;
+                }
+
+                .btn-danger {
+                    color: white;
+                    background: var(--red);
+                }
+
+                .btn-danger i {
+                    margin-right: 7px;
+                }
+
+                .side-card {
+                    padding: 22px;
+                }
+
+                .side-card h3 {
+                    font-size: 14px;
+                    margin: 0 0 18px;
+                    font-weight: 700;
+                }
+
+                .tip {
+                    display: flex;
+                    gap: 11px;
+                    padding: 13px 0;
+                    border-top: 1px solid var(--line);
+                }
+
+                .tip:first-of-type {
+                    border-top: 0;
+                    padding-top: 0;
+                }
+
+                .tip-icon {
+                    width: 28px;
+                    height: 28px;
+                    border-radius: 8px;
+                    background: #fff5df;
+                    color: var(--orange);
+                    display: grid;
+                    place-items: center;
+                    flex-shrink: 0;
+                }
+
+                .tip:nth-of-type(3) .tip-icon {
+                    color: var(--green);
+                    background: #e9faf4;
+                }
+
+                .tip p {
+                    margin: 0;
+                    color: var(--muted);
+                    font-size: 11px;
+                    line-height: 1.55;
+                }
+
+                .tip p strong {
+                    display: block;
+                    color: #4b5870;
+                    font-size: 12px;
+                    margin-bottom: 2px;
+                }
+
+                .quick-card {
+                    margin-top: 18px;
+                    padding: 18px 20px;
+                    background: linear-gradient(135deg, #eff4ff, #f8faff);
+                    border: 1px solid #dbe6ff;
+                    border-radius: 14px;
+                }
+
+                .quick-card p {
+                    color: #58709d;
+                    font-size: 11px;
+                    line-height: 1.55;
+                    margin: 0 0 12px;
+                }
+
+                .quick-card a {
+                    color: var(--blue);
+                    font-weight: 700;
+                    font-size: 12px;
+                }
+
+                .footer {
+                    color: #a2aabd;
+                    font-size: 11px;
+                    text-align: center;
+                    padding: 32px 0 4px;
+                }
+
+                .modal-content {
+                    border: 0;
+                    border-radius: 16px;
+                    box-shadow: var(--shadow);
+                }
+
+                .modal-header, .modal-footer {
+                    border-color: var(--line);
+                    padding: 18px 22px;
+                }
+
+                .modal-title {
+                    font-size: 17px;
+                    font-weight: 700;
+                }
+
+                .modal-body {
+                    padding: 22px;
+                }
+
+                .modal .close {
+                    font-size: 24px;
+                    font-weight: 400;
+                    color: #9ba5b8;
+                }
+
+                .check-row {
+                    display: flex;
+                    gap: 25px;
+                    margin-top: 14px;
+                }
+
+                .check-row label {
+                    font-weight: 500;
+                    font-size: 12px;
+                }
+                .search-card, .product-card {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 16px;
+                    box-shadow: var(--shadow)
+                }
+
+                .search-card {
+                    padding: 20px 23px;
+                    margin-bottom: 22px
+                }
+                .card-label {
+                    color: #4b5870;
+                    font-size: 13px;
+                    font-weight: 750;
+                    margin: 0 0 13px
+                }
+                .search-form {
+                    display: grid;
+                    grid-template-columns:minmax(0, 1fr) 48px;
+                    gap: 10px
+                }
+
+                @media (max-width: 1050px) {
+                    .workspace {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .side-card-wrap {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 18px;
+                    }
+
+                    .quick-card {
+                        margin-top: 0;
+                    }
+                }
+
+                @media (max-width: 780px) {
+                    .sidebar {
+                        transform: translateX(-100%);
+                        box-shadow: 10px 0 30px rgba(0, 0, 0, .15);
+                    }
+
+                    .sidebar.open {
+                        transform: translateX(0);
+                    }
+
+                    .main {
+                        margin-left: 0;
+                        width: 100%;
+                    }
+
+                    .mobile-toggle {
+                        display: block;
+                        margin-right: 14px;
+                    }
+
+                    .topbar {
+                        padding: 0 20px;
+                    }
+
+                    .crumbs {
+                        display: none;
+                    }
+
+                    .page {
+                        padding: 28px 18px;
+                    }
+
+                    .page-heading {
+                        display: block;
+                    }
+
+                    .back-link {
+                        display: inline-block;
+                        margin-top: 16px;
+                    }
+                    .search-card, .product-card {
+                        padding: 21px 17px
+                    }
+                }
+
+                @media (max-width: 560px) {
+                    h1 {
+                        font-size: 24px;
+                    }
+
+                    .profile-name, .profile-role {
+                        display: none;
+                    }
+
+                    .profile {
+                        padding-left: 10px;
+                    }
+
+                    .fields {
+                        grid-template-columns: 1fr;
+                    }
+
+                    .field.full {
+                        grid-column: auto;
+                    }
+
+                    .form-card {
+                        padding: 21px 17px;
+                    }
+
+                    .card-head {
+                        display: block;
+                    }
+
+                    .form-description {
+                        display: block;
+                    }
+
+                    .required-note {
+                        display: block;
+                        margin-top: 8px;
+                    }
+                    .card-title-row {
+                        display: flex;
+                        align-items: center;
+                        flex-direction: row;
+                        gap: 10px;
+                    }
+                    .card-title-row h2 {
+                        font-size: 28px;
+                        margin: 0;
+                    }
+
+                    .form-footer {
+                        flex-direction: column-reverse;
+                    }
+
+                    .btn {
+                        width: 100%;
+                    }
+
+                    .side-card-wrap {
+                        display: block;
+                    }
+
+                    .quick-card {
+                        margin-top: 18px;
+                    }
+                    .search-form {
+                        grid-template-columns:1fr
+                    }
+
+                    .search-btn {
+                        width: 100%
+                    }
+                    .mobile-break {
+                        display: block;
+                    }
+                }
+            </style>
+        </th:block>
+    </head>
+    <body>
+        <th:block th:fragment="content">
+            <section class="page">
+                <div class="page-heading">
+                    <div>
+                        <p class="eyebrow">Catalogue produits</p>
+                        <h1>Modifier un produit</h1>
+                        <p class="subtitle">Recherchez un produit puis mettez à jour ses informations et son stock.</p>
+                    </div>
+                    <a class="back-link" th:href="@{/products}"><i class="fa fa-arrow-left"></i> Retour au catalogue</a>
+                </div>
+                <div class="workspace">
+                    <div class="card form-card">
+                        <div class="card-head">
+                            <p class="card-label"><i class="fa fa-search" style="color:var(--blue);margin-right:6px"></i> Rechercher le produit à modifier</p>
+                            <br class="mobile-break">
+                            <form class="search-form" th:action="@{/products/modify}" method="get" id="productSearchForm">
+                                <div class="search-wrapper">
+                                    <input type="text" class="control" id="searchProduct" placeholder="Référence ou nom du produit" autocomplete="off"
+                                           required autofocus>
+                                    <!-- ID du produit sélectionné -->
+                                    <input type="hidden" id="productId" name="productId">
+                                    <!-- Suggestions -->
+                                    <ul id="productSuggestions"
+                                        class="list-group position-absolute w-100 mt-1 shadow-sm"
+                                        style="z-index:1050;top:100%;left:0;max-height:200px;overflow-y:auto;">
+                                    </ul>
+                                </div>
+                                <button class="search-btn" type="submit" aria-label="Rechercher">
+                                    <i class="fa fa-search"></i>
+                                </button>
+                            </form>
+                            <br class="mobile-break">
+                            <div class="card-title-row">
+                                <div class="product-icon">
+                                    <i class="fa fa-pencil"></i>
+                                </div>
+                                <h2>Informations du produit</h2>
+                            </div>
+                            <br class="mobile-break">
+                            <!--retour a la ligne-->
+                            <p class="form-description">
+                                Modifiez les données sélectionnées puis enregistrez les changements.
+
+                                <span class="required-note">
+                                <b class="required">*</b> Champs obligatoires
+                            </span>
+                            </p>
+                        </div>
+                        <div th:if="${error}" class="alert alert-danger" role="alert">
+                            <i class="fa fa-exclamation-circle mr-2"></i>
+                            <span th:text="${error}"></span>
+                        </div>
+                        <div th:if="${success}" class="alert alert-success" role="alert">
+                            <i class="fa fa-check-circle mr-2"></i>
+                            <span th:text="${success}"></span>
+                        </div>
+                        <form method="post" role="form" th:action="@{/products/{id}/modify(id=${product.id})}"
+                              enctype="multipart/form-data" onsubmit="return validateRef();">
+                            <input type="hidden" id="prodId" name="id" th:value="${product.id}">
+                            <fieldset th:disabled="${product.id == null}"
+                                      th:classappend="${product == null} ? 'form-disabled' : ''">
+                                <div class="fields">
+                                    <div class="field">
+                                        <label class="field-label" for="name">Désignation <span class="required">*</span></label>
+                                        <input type="text" class="control" placeholder="Désignation du produit" id="name" name="name" th:value="${product.name}" required>
+                                    </div>
+                                    <div class="field">
+                                        <label class="field-label" for="ref">Référence <span class="required">*</span></label>
+                                        <input type="text" class="control" placeholder="Référence produit" id="ref" name="ref" th:value="${product.ref}"
+                                               oninput="this.value = this.value.replace(/\s/g, '')"
+                                               hx-get="/products/check-ref"
+                                               hx-trigger="blur, keyup changed delay:500ms"
+                                               hx-target="#ref-feedback"
+                                               hx-swap="innerHTML"
+                                               hx-vals="js:{excludeId: getCurrentProductId()}"
+                                               required>
+                                        <div id="ref-feedback">
+                                            <input type="hidden" id="refExiste" value="false">
+                                        </div>
+                                    </div>
+                                    <!-- fragments/cat-select.html -->
+                                    <div class="field" id="cat-select-container" th:fragment="catSelect">
+                                        <label for="idCate">Catégorie <span class="required">*</span></label>
+                                        <select class="control" name="idCat" id="idCate" required>
+                                            <option th:if="${product.getId() == null}" value="">Choisir une catégorie</option>
+                                            <th:block th:each="cat : ${cats}">
+                                                <option th:value="${cat.id}" th:text="${cat.lib}"
+                                                        th:selected="${product != null and product.categorie != null and product.categorie.id == cat.id}"></option>
+                                            </th:block>
+                                        </select>
+                                    </div>
+                                    <div class="field">
+                                        <label class="field-label" for="pv">Prix de vente <span class="required">*</span></label>
+                                        <input type="number" class="control" placeholder="Prix de vente" id="pv"
+                                               name="prixVente" th:value="${product.prixVente}"
+                                               min="0" step="0.01" required>
+                                    </div>
+                                    <div class="field">
+                                        <label class="field-label" for="qte">Quantité à ajouter <span class="required">*</span></label>
+                                        <input type="number" class="control" value="0" id="qte" name="quantite" required>
+                                        <span class="stock-note">
+                                            <i class="fa fa-cubes" th:classappend="${product.quantite <= 5} ? ' text-danger' : ' text-primary'"></i>
+                                            Quantité actuelle en stock :
+                                            <strong th:classappend="${product.quantite <= 5} ? ' text-danger' : ' text-primary'"
+                                                    th:text="${product.quantite}">
+                                            </strong>
+                                        </span>
+                                    </div>
+                                    <div class="field full">
+                                        <label for="imagee">Nouvelle image <span class="field-hint">(facultatif)</span></label>
+                                        <div class="upload-box">
+                                            <div class="upload-icon" id="upload-icon">
+                                                <i class="fa fa-cloud-upload"></i>
+                                            </div>
+                                            <div class="upload-copy">
+                                                <strong id="file-label">Cliquez pour importer une image</strong>
+                                                <span id="file-info">PNG, JPG ou JPEG · 5 Mo maximum</span>
+                                            </div>
+                                            <input type="file" id="imagee" name="imagee" accept="image/png,image/jpeg">
+                                        </div>
+                                    </div>
+                                </div>
+                                <br>
+                                <div class="actions">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fa fa-save"></i> Enregistrer les modifications
+                                    </button>
+                                    <br class="mobile-break">
+                                    <br class="mobile-break">
+                                    <!--gharnata-->
+                                    <a th:if="${product.name!= null}" class="btn btn-danger"
+                                       th:href="@{/products/{id}/delete/prod(id=${product.id})}"
+                                       onclick="return confirm('Voulez vous vraiment supprimer ce produit ?');">
+                                        <i class="fa fa-trash"></i> Supprimer le produit</a>
+                                </div>
+                            </fieldset>
+                        </form>
+                    </div>
+
+                    <div class="side-card-wrap">
+                        <div class="card side-card"><h3>Conseils de saisie</h3>
+                            <div class="tip">
+                                <div class="tip-icon"><i class="fa fa-lightbulb-o"></i></div>
+                                <p><strong>Référence unique</strong>
+                                    Utilisez une référence claire pour retrouver rapidement le produit.</p>
+                            </div>
+                            <div class="tip">
+                                <div class="tip-icon"><i class="fa fa-check"></i></div>
+                                <p><strong>Prix de vente</strong>Saisissez le prix en Dirham, sans ajouter le symbole monétaire.</p>
+                            </div>
+                            <div class="tip">
+                                <div class="tip-icon"><i class="fa fa-cubes"></i></div>
+                                <p><strong>Quantité à ajouter</strong>
+                                    La quantité saisie sera ajoutée au stock actuel. Vous pouvez également saisir une quantité négative pour diminuer le stock existant.
+                                </p>
+                            </div>
+                        </div>
+                        <div class="quick-card"><p>Vous ne trouvez pas la bonne catégorie pour votre produit ?</p><a
+                                href="#" data-toggle="modal" data-target="#addCat">+ Créer une catégorie</a>
+                        </div>
+                    </div>
+                </div>
+                <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
+            </section>
+        </th:block>
+        <th:block th:fragment="modals">
+        </th:block>
+        <th:block th:fragment="pageJs">
+            <script>
+                (function () {
+                    var sidebar = document.getElementById('sidebar'), toggle = document.getElementById('sidebarToggle');
+                    if (toggle) toggle.addEventListener('click', function () {
+                        sidebar.classList.toggle('open')
+                    });
+                    document.addEventListener('click', function (e) {
+                        if (window.innerWidth <= 780 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) sidebar.classList.remove('open')
+                    });
+                    var file = document.getElementById('imagee');
+                    if (file) file.addEventListener('change', function () {
+                        var box = file.parentElement;
+                        if (file.files.length) box.title = file.files[0].name
+                    });
+                }());
+            </script>
+            <script>
+                function validateRef() {
+                    const existe = document.getElementById("refExiste");
+
+                    if (existe && existe.value === "true") {
+                        alert("Cette référence existe déjà.");
+                        return false;
+                    }
+
+                    return true;
+                }
+            </script>
+            <script>
+                function getCurrentProductId() {
+                    var idField = document.querySelector('input[id="prodId"]');
+                    return idField ? idField.value : null;
+                }
+            </script>
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+
+                    const searchInput = document.getElementById("searchProduct");
+                    const suggestions = document.getElementById("productSuggestions");
+                    const hiddenProductId = document.getElementById("productId");
+                    const form = document.getElementById("productSearchForm");
+
+                    // Permet d'attendre avant d'envoyer la requête
+                    let searchTimeout;
+                    // Permet d'identifier la requête la plus récente
+                    let searchRequestId = 0;
+
+                    async function searchProducts() {
+                        const query = searchInput.value.trim();
+                        hiddenProductId.value = "";
+                        suggestions.innerHTML = "";
+                        if (query.length < 1) {
+                            return;
+                        }
+                        // Identifiant de cette recherche
+                        const requestId = ++searchRequestId;
+                        try {
+                            const response = await fetch(
+                                `/products/api/search?q=${encodeURIComponent(query)}`
+                            );
+                            if (!response.ok) {
+                                throw new Error("Erreur lors de la recherche");
+                            }
+                            const products = await response.json();
+                            /*
+                             * Si une nouvelle recherche a été lancée entre-temps,
+                             * on ignore le résultat de cette ancienne recherche.
+                             */
+                            if (requestId !== searchRequestId) {
+                                return;
+                            }
+                            suggestions.innerHTML = "";
+                            if (products.length > 0) {
+                                products.forEach(product => {
+                                    const li = document.createElement("li");
+                                    li.classList.add(
+                                        "list-group-item",
+                                        "list-group-item-action",
+                                        "p-2",
+                                        "small"
+                                    );
+
+                                    li.innerHTML = `
+                            <div>
+                                <strong>${product.name}</strong><br>
+                                <small class="text-muted">
+                                    Référence : ${product.ref}
+                                </small>
+                            </div>
+                        `;
+
+                                    li.addEventListener("click", () => {
+                                        searchInput.value =
+                                            `${product.name} - ${product.ref}`;
+                                        hiddenProductId.value = product.id;
+                                        suggestions.innerHTML = "";
+                                    });
+                                    suggestions.appendChild(li);
+                                });
+                            } else {
+                                const li = document.createElement("li");
+                                li.classList.add(
+                                    "list-group-item",
+                                    "text-muted",
+                                    "small"
+                                );
+                                li.textContent = "Aucun produit trouvé";
+                                suggestions.appendChild(li);
+                            }
+                        } catch (error) {
+                            console.error("Erreur recherche produit :", error);
+                        }
+                    }
+                    // Recherche lorsque l'utilisateur écrit
+                    searchInput.addEventListener("input", () => {
+
+                        // Annule le délai précédent
+                        clearTimeout(searchTimeout);
+
+                        // Une nouvelle saisie annule la sélection précédente
+                        hiddenProductId.value = "";
+
+                        // Efface immédiatement les anciennes suggestions
+                        suggestions.innerHTML = "";
+
+                        /*
+                         * Attend 300 ms après la dernière frappe
+                         * avant d'envoyer la requête.
+                         */
+                        searchTimeout = setTimeout(() => {
+                            searchProducts();
+                        }, 300);
+                    });
+                    // Réafficher les suggestions lorsqu'on revient dans l'input
+                    searchInput.addEventListener("focus", () => {
+                        if (searchInput.value.trim().length > 0) {
+                            // On peut rechercher immédiatement au focus
+                            searchProducts();
+                        }
+                    });
+                    // Fermer les suggestions lorsqu'on clique ailleurs
+                    document.addEventListener("click", (event) => {
+                        if (!event.target.closest("#searchProduct") &&
+                            !event.target.closest("#productSuggestions")) {
+                            suggestions.innerHTML = "";
+                        }
+                    });
+                    // Vérification avant soumission
+                    form.addEventListener("submit", (event) => {
+                        if (!hiddenProductId.value) {
+                            event.preventDefault();
+                            alert("Veuillez sélectionner un produit dans la liste.");
+                            searchInput.focus();
+                        }
+                    });
+                });
+            </script>
+            <script>
+                const imageInput = document.getElementById('imagee');
+
+                imageInput.addEventListener('change', function () {
+                    const file = this.files[0];
+
+                    if (!file) return;
+
+                    if (!['image/png', 'image/jpeg'].includes(file.type)) {
+                        alert('Format invalide. Choisissez une image PNG ou JPG.');
+                        this.value = '';
+                        return;
+                    }
+
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('L’image ne doit pas dépasser 5 Mo.');
+                        this.value = '';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        // Remplacer l'icône par la miniature
+                        const icon = document.getElementById('upload-icon');
+
+                        if (icon) {
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.className = 'upload-preview';
+                            img.id = 'image-preview';
+
+                            icon.replaceWith(img);
+                        } else {
+                            document.getElementById('image-preview').src = e.target.result;
+                        }
+
+                        // Afficher le nom du fichier
+                        document.getElementById('file-label').textContent = file.name;
+                        document.getElementById('file-info').textContent = 'Image sélectionnée';
+                    };
+
+                    reader.readAsDataURL(file);
+                });
+            </script>
+        </th:block>
+    </body>
+</html>
