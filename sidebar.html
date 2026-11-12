@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<aside th:fragment="sidebar" class="sidebar" id="sidebar">
+
+    <div class="brand">
+        <a th:href="@{/}">
+            <img src="/assets/images/logo/logo_icon.png" alt="Gharnata">
+            <div class="brand-text">
+                <strong>Gharnata Stock</strong>
+                <small>Contrôle total</small>
+            </div>
+        </a>
+        <!--<div>
+            <strong>Gharnata Stock</strong>
+            <small>Contrôle total</small>
+        </div>-->
+    </div>
+
+    <div class="menu-label">Espace de travail</div>
+    <ul class="nav-list">
+        <li th:classappend="${currentUri == '/dashboard'} ? 'active' : ''">
+            <a th:href="@{/dashboard}">
+                <i class="fa fa-dashboard"></i>
+                <span>Dashboard</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="menu-label">Gestion Commerciale</div>
+    <ul class="nav-list">
+
+        <li th:classappend="${currentUri.startsWith('/products')} ? 'active' : ''">
+            <a href="#products" data-toggle="collapse" aria-expanded="false">
+                <i class="fa fa-cubes"></i>
+                <span>Produits et Stock </span>
+                <i class="fa fa-angle-down chevron"></i>
+            </a>
+            <ul class="submenu collapse" id="products">
+                <li><a th:href="@{/products/stock}"><span>Page de stock</span></a></li>
+                <li><a th:href="@{/products}"><span>Galerie des produits</span></a></li>
+                <li><a th:href="@{/products/add}"><span>Ajouter un produit</span></a></li>
+                <li><a th:href="@{/products/modify}"><span>Modifier un produit</span></a></li>
+            </ul>
+        </li>
+
+        <li th:classappend="${currentUri.startsWith('/clients')} ? 'active' : ''">
+            <a href="#clients" data-toggle="collapse" aria-expanded="false">
+                <i class="fa fa-users"></i>
+                <span>Clients </span>
+                <i class="fa fa-angle-down chevron"></i>
+            </a>
+            <ul class="submenu collapse" id="clients">
+                <li><a th:href="@{/clients}"><span>Liste des clients</span></a></li>
+                <li><a th:href="@{/clients/add}"><span>Ajouter un client</span></a></li>
+            </ul>
+        </li>
+
+        <li th:classappend="${currentUri.startsWith('/commands')} ? 'active' : ''">
+            <a href="#commandes" data-toggle="collapse" aria-expanded="false">
+                <i class="fa fa-shopping-cart"></i>
+                <span>Commandes </span>
+                <i class="fa fa-angle-down chevron"></i>
+            </a>
+            <ul class="submenu collapse" id="commandes">
+                <li><a th:href="@{/commands}"><span>Liste des commandes</span></a></li>
+                <li><a th:href="@{/commands/new}"><span>Nouvelle commande</span></a></li>
+            </ul>
+        </li>
+
+        <li th:classappend="${currentUri.startsWith('/factures')} ? 'active' : ''">
+            <a href="#billing" data-toggle="collapse" aria-expanded="false">
+                <i class="fa fa-file-text-o"></i>
+                <span>Facturation</span>
+                <i class="fa fa-angle-down chevron"></i>
+            </a>
+            <ul class="submenu collapse" id="billing">
+                <li><a th:href="@{/factures}"><span>Gestion des factures</span></a></li>
+                <li><a th:href="@{/factures/sim-fac}"><span>Simuler une facture</span></a></li>
+            </ul>
+        </li>
+
+        <li th:classappend="${currentUri.startsWith('/payments')} ? 'active' : ''">
+            <a th:href="@{/payments}">
+                <i class="fa fa-money"></i>
+                <span>Paiements</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="menu-label">Administration</div>
+    <ul class="nav-list">
+        <li th:classappend="${currentUri.startsWith('/users')} ? 'active' : ''">
+            <a th:href="@{/users}">
+                <i class="fa fa-shield"></i>
+                <span>Utilisateurs</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="menu-label">Outils</div>
+    <ul class="nav-list">
+        <li th:classappend="${currentUri.startsWith('/notifications')} ? 'active' : ''">
+            <a href="#notifications" data-toggle="collapse" aria-expanded="false">
+                <i class="fa fa-bell"></i>
+                <span>Notifications </span>
+                <i class="fa fa-angle-down chevron"></i>
+            </a>
+            <ul class="submenu collapse" id="notifications">
+                <li><a th:href="@{/notifications/payments}"><span>Notifications des paiements</span></a></li>
+                <li><a th:href="@{/notifications/stock}"><span>Notifications du stock</span></a></li>
+            </ul>
+        </li>
+        <li>
+            <a href="#" data-toggle="modal" data-target="#loadProds">
+                <i class="fa fa-download"></i>
+                <span>Exporter les produits</span>
+            </a>
+        </li>
+    </ul>
+
+    <div class="sidebar-bottom">
+        <i class="fa fa-circle"></i> Système opérationnel
+    </div>
+
+</aside>
+
+</body>
+</html>

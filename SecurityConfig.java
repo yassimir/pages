@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -17,9 +18,12 @@ import org.springframework.security.web.session.HttpSessionEventPublisher;
 public class SecurityConfig {
 
     private final CustomSessionRegistry sessionRegistry;
+    private final PaymentNotificationSuccessHandler paymentNotificationSuccessHandler;
 
-    public SecurityConfig(CustomSessionRegistry sessionRegistry) {
+    public SecurityConfig(CustomSessionRegistry sessionRegistry,
+                          PaymentNotificationSuccessHandler paymentNotificationSuccessHandler) {
         this.sessionRegistry = sessionRegistry;
+        this.paymentNotificationSuccessHandler = paymentNotificationSuccessHandler;
     }
 
     @Bean
@@ -39,18 +43,23 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/resources/**", "/assets/**", "/login").permitAll()
-                        .requestMatchers("/gharnata/users/**").hasRole("ADMIN")
-                        .requestMatchers(
-                                HttpMethod.POST,
-                                "/gharnata/payments/*/confirm"
-                        ).hasRole("ADMIN")
-                        .requestMatchers("/gharnata/**").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers("/resources/**", "/assets/**", "/images/**", "/icons/**", "/login", "/service-worker.js", "/manifest.json").permitAll()
+                        .requestMatchers("/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/payments/*/confirm").hasRole("ADMIN")
+                        .requestMatchers("/notifications-paiement/**").hasRole("ADMIN")
+                        .requestMatchers("/clients/**","/commands/**", "/factures/**", "/notif-stock/**",
+                                         "/dashboard/**","/gharnata/**", "/panier/**", "/payments/**",
+                                         "/products/**").authenticated()
+                        .anyRequest().authenticated()
                 )
-                .formLogin(form -> form
+                /*.formLogin(form -> form
                         .loginPage("/login")
                         .defaultSuccessUrl("/gharnata/show-products")
+                        .permitAll()
+                )*/
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .successHandler(paymentNotificationSuccessHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout
@@ -66,6 +75,9 @@ public class SecurityConfig {
                         .tokenValiditySeconds(14 * 24 * 60 * 60) // 14 jours
                 )
                 .sessionManagement(session -> session
+                        .sessionFixation(
+                                SessionManagementConfigurer.SessionFixationConfigurer::changeSessionId
+                        )
                         .maximumSessions(1)
                         .maxSessionsPreventsLogin(false) // false = la nouvelle connexion expire l'ancienne (recommandé)
                         .sessionRegistry(sessionRegistry)
