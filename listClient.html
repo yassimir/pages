@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(
+          ~{::content},
+          ~{::modals},
+          ${breadcrumbs},
+          'Gharnata | Clients',
+          ~{::pageCss},
+          ~{::pageJs}
+      )}">
+
+    <head>
+        <th:block th:fragment="pageCss">
+            <meta name="description" content="Gestion des clients Gharnata">
+            <style>
+            :root {
+                --ink: #172033;
+                --muted: #7e889d;
+                --line: #e8ebf2;
+                --surface: #fff;
+                --canvas: #f5f7fb;
+                --navy: #1c2742;
+                --blue: #3977f6;
+                --blue-soft: #edf3ff;
+                --orange: #f59e0b;
+                --green: #16a37a;
+                --red: #e45f68;
+                --shadow: 0 16px 40px rgba(35, 49, 85, .08)
+            }
+
+            * {
+                box-sizing: border-box
+            }
+
+            body {
+                margin: 0;
+                background: var(--canvas);
+                color: var(--ink);
+                font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                font-size: 14px
+            }
+
+            .search-wrapper {
+                position: relative;
+                flex: 1;
+            }
+
+            #clientSuggestions {
+                margin: 0;
+                padding: 0;
+                list-style: none;
+            }
+            #clientSuggestions .list-group-item {
+                cursor: pointer;
+                background-color: rgba(216, 215, 215, 0.96);
+                color: #212529;
+                border-color: rgba(204, 202, 202, 0.94);
+                transition: background-color 0.15s ease;
+            }
+
+            #clientSuggestions .list-group-item:hover {
+                background-color: #cccbcb;
+            }
+
+            #clientSuggestions .list-group-item small {
+                color: #3e4243 !important;
+            }
+
+            a {
+                color: inherit;
+                text-decoration: none
+            }
+
+            a:hover {
+                text-decoration: none
+            }
+
+            .app-shell {
+                min-height: 100vh;
+                display: flex
+            }
+
+            .sidebar {
+                width: 260px;
+                flex: 0 0 260px;
+                min-height: 100vh;
+                background: var(--navy);
+                color: #aeb9d0;
+                padding: 22px 14px;
+                position: fixed;
+                z-index: 20;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transition: transform .25s ease
+            }
+
+            .menu-label {
+                padding: 0 14px;
+                color: #6f7e9f;
+                font-size: 10px;
+                text-transform: uppercase;
+                letter-spacing: 1.3px;
+                margin: 19px 0 9px;
+                font-weight: 700
+            }
+
+            .nav-list {
+                list-style: none;
+                padding: 0;
+                margin: 0
+            }
+
+            .nav-list li {
+                margin: 3px 0
+            }
+
+            .nav-list > li > a, .nav-list .submenu a {
+                display: flex;
+                align-items: center;
+                min-height: 45px;
+                border-radius: 10px;
+                padding: 0 14px;
+                transition: all .2s
+            }
+
+            .nav-list > li > a:hover, .nav-list .submenu a:hover {
+                background: rgba(255, 255, 255, .07);
+                color: #fff
+            }
+
+            .nav-list > li > a i {
+                width: 27px;
+                color: #8493b2;
+                font-size: 16px
+            }
+
+            .nav-list > li.active > a {
+                background: linear-gradient(90deg, rgba(57, 119, 246, .25), rgba(57, 119, 246, .08));
+                color: #fff;
+                box-shadow: inset 3px 0 var(--blue)
+            }
+
+            .nav-list > li.active > a i {
+                color: #73a0ff
+            }
+
+            .chevron {
+                margin-left: auto !important;
+                width: auto !important;
+                font-size: 11px !important;
+                color: #7483a2 !important
+            }
+
+            .submenu {
+                list-style: none;
+                margin: 2px 0 7px 27px;
+                padding: 0 0 0 12px;
+                border-left: 1px solid #34415e
+            }
+
+            .submenu a {
+                min-height: 35px !important;
+                font-size: 12px;
+                padding: 0 10px !important
+            }
+
+            .submenu a.current {
+                color: #80a7ff;
+                font-weight: 600
+            }
+
+            .sidebar-bottom {
+                position: absolute;
+                left: 14px;
+                right: 14px;
+                bottom: 20px;
+                border-top: 1px solid rgba(255, 255, 255, .08);
+                padding: 17px 12px 0;
+                color: #8492b0;
+                font-size: 11px
+            }
+
+            .sidebar-bottom i {
+                color: #63c99f;
+                margin-right: 7px
+            }
+
+            .main {
+                margin-left: 260px;
+                width: calc(100% - 260px);
+                min-width: 0
+            }
+
+            .topbar {
+                height: 76px;
+                background: rgba(255, 255, 255, .92);
+                border-bottom: 1px solid var(--line);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 4.2%;
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                backdrop-filter: blur(14px)
+            }
+
+            .mobile-toggle {
+                border: 0;
+                background: transparent;
+                color: var(--ink);
+                font-size: 21px;
+                display: none
+            }
+
+            .crumbs {
+                color: var(--muted);
+                font-size: 13px
+            }
+
+            .crumbs i {
+                margin: 0 10px;
+                font-size: 10px
+            }
+
+            .crumbs strong {
+                color: var(--ink);
+                font-weight: 600
+            }
+
+            .top-actions {
+                display: flex;
+                align-items: center;
+                gap: 19px
+            }
+
+            .icon-btn {
+                position: relative;
+                color: #77839a;
+                font-size: 18px
+            }
+
+            .notification {
+                position: absolute;
+                width: 7px;
+                height: 7px;
+                border-radius: 50%;
+                background: var(--red);
+                top: 0;
+                right: -3px;
+                border: 2px solid #fff;
+                box-sizing: content-box
+            }
+
+            .profile {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                border-left: 1px solid var(--line);
+                padding-left: 18px
+            }
+
+            .profile img {
+                width: 35px;
+                height: 35px;
+                border-radius: 50%;
+                object-fit: cover;
+                background: #e9eef9
+            }
+
+            .profile-name {
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--ink)
+            }
+
+            .profile-role {
+                display: block;
+                color: var(--muted);
+                font-size: 11px;
+                margin-top: 2px
+            }
+
+            .page {
+                padding: 38px 4.2% 32px;
+                max-width: 1500px
+            }
+
+            .page-heading {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                margin-bottom: 27px
+            }
+
+            .eyebrow {
+                color: var(--blue);
+                font-size: 11px;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 1.5px;
+                margin: 0 0 9px
+            }
+
+            h1 {
+                font-size: 28px;
+                margin: 0;
+                letter-spacing: -.7px;
+                font-weight: 750
+            }
+
+            .subtitle {
+                margin: 8px 0 0;
+                color: var(--muted);
+                font-size: 14px
+            }
+
+            .primary-btn {
+                background: var(--blue);
+                color: #fff;
+                border-radius: 9px;
+                padding: 12px 17px;
+                font-size: 12px;
+                font-weight: 700;
+                box-shadow: 0 7px 15px rgba(57, 119, 246, .2)
+            }
+
+            .primary-btn i {
+                margin-right: 7px
+            }
+
+            .toolbar {
+                background: var(--surface);
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                padding: 19px 21px;
+                box-shadow: var(--shadow);
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                gap: 15px;
+                margin-bottom: 22px
+            }
+
+            .search-form {
+                display: flex;
+                max-width: 620px;
+                flex: 1
+            }
+
+            .search-input {
+                height: 45px;
+                border: 1px solid #dfe4ee;
+                border-right: 0;
+                border-radius: 9px 0 0 9px;
+                background: #fbfcfe;
+                padding: 0 14px;
+                outline: none;
+                flex: 1;
+                color: var(--ink);
+                font-size: 13px
+            }
+
+            .search-input:focus {
+                border-color: #7ea5fc;
+                box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
+                background: #fff
+            }
+
+            .search-btn {
+                width: 49px;
+                border: 0;
+                border-radius: 0 9px 9px 0;
+                background: var(--navy);
+                color: #fff;
+                font-size: 15px
+            }
+
+            .catalog-meta {
+                color: var(--muted);
+                font-size: 12px;
+                white-space: nowrap
+            }
+
+            .catalog-meta i {
+                color: var(--blue);
+                margin-right: 6px
+            }
+
+            .client-panel {
+                background: var(--surface);
+                border: 1px solid var(--line);
+                border-radius: 16px;
+                padding: 26px 25px 20px;
+                box-shadow: var(--shadow)
+            }
+
+            .panel-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 21px
+            }
+
+            .panel-head h2 {
+                font-size: 17px;
+                margin: 0;
+                font-weight: 700
+            }
+
+            .view-label {
+                color: var(--muted);
+                font-size: 11px
+            }
+
+            .view-label i {
+                color: var(--blue);
+                margin-right: 5px
+            }
+
+            .clients-grid {
+                display: grid;
+                grid-template-columns:repeat(3, minmax(0, 1fr));
+                gap: 18px
+            }
+
+            .client-card {
+                border: 1px solid var(--line);
+                border-radius: 14px;
+                padding: 19px;
+                background: #fff;
+                transition: transform .2s, box-shadow .2s, border-color .2s;
+                position: relative
+            }
+
+            .client-card:hover {
+                transform: translateY(-3px);
+                border-color: #cbd9fb;
+                box-shadow: 0 12px 25px rgba(35, 49, 85, .1)
+            }
+
+            .client-top {
+                display: flex;
+                align-items: flex-start;
+                gap: 12px;
+                border-bottom: 1px solid var(--line);
+                padding-bottom: 15px;
+                margin-bottom: 14px
+            }
+
+            .client-avatar {
+                width: 43px;
+                height: 43px;
+                border-radius: 12px;
+                display: grid;
+                place-items: center;
+                background: var(--blue-soft);
+                color: var(--blue);
+                font-size: 18px;
+                flex-shrink: 0
+            }
+
+            .client-heading {
+                min-width: 0
+            }
+
+            .client-heading h3 {
+                font-size: 14px;
+                font-weight: 700;
+                margin: 2px 0 5px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis
+            }
+
+            .type-badge {
+                display: inline-block;
+                color: #647089;
+                background: #f2f4f8;
+                border-radius: 20px;
+                padding: 4px 8px;
+                font-size: 10px;
+                font-weight: 700
+            }
+
+            .client-facts {
+                list-style: none;
+                padding: 0;
+                margin: 0;
+                color: var(--muted);
+                font-size: 12px;
+                line-height: 1.9
+            }
+
+            .client-facts li i {
+                width: 20px;
+                color: #9aa6ba
+            }
+
+            .client-facts strong {
+                color: #526079;
+                font-weight: 600
+            }
+
+            .client-actions {
+                display: flex;
+                gap: 7px;
+                margin-top: 16px;
+                padding-top: 14px;
+                border-top: 1px solid var(--line)
+            }
+
+            .action-btn {
+                border: 0;
+                border-radius: 7px;
+                background: #f2f4f8;
+                color: #66728a;
+                font-size: 11px;
+                font-weight: 700;
+                padding: 8px 9px;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                flex: 1
+            }
+
+            .action-btn:hover {
+                background: var(--blue-soft);
+                color: var(--blue)
+            }
+
+            .action-btn.order {
+                background: var(--blue);
+                color: #fff
+            }
+
+            .action-btn.order:hover {
+                background: #2864db
+            }
+
+            .action-btn.delete:hover {
+                background: #fff0f1;
+                color: var(--red)
+            }
+
+            .empty-state {
+                padding: 55px 20px;
+                text-align: center;
+                color: var(--muted);
+                grid-column: 1/-1
+            }
+
+            .empty-state i {
+                font-size: 38px;
+                color: #c9d5eb;
+                margin-bottom: 15px
+            }
+
+            .empty-state h3 {
+                color: #4d5a72;
+                font-size: 16px;
+                margin: 0 0 7px
+            }
+
+            .empty-state p {
+                font-size: 12px;
+                margin: 0
+            }
+
+            .footer {
+                color: #a2aabd;
+                font-size: 11px;
+                text-align: center;
+                padding: 32px 0 4px
+            }
+
+            .modal-content {
+                border: 0;
+                border-radius: 16px;
+                box-shadow: var(--shadow)
+            }
+
+            .modal-header, .modal-footer {
+                border-color: var(--line);
+                padding: 18px 22px
+            }
+
+            .modal-title {
+                font-size: 17px;
+                font-weight: 700
+            }
+
+            .modal-body {
+                padding: 22px
+            }
+
+            .modal .close {
+                font-size: 24px;
+                font-weight: 400;
+                color: #9ba5b8
+            }
+
+            .control {
+                width: 100%;
+                height: 47px;
+                border: 1px solid #dfe4ee;
+                border-radius: 9px;
+                color: var(--ink);
+                background: #fbfcfe;
+                padding: 0 14px;
+                outline: none;
+                font-size: 13px
+            }
+
+            .check-row {
+                display: flex;
+                gap: 25px;
+                margin-top: 14px
+            }
+
+            .check-row label {
+                font-weight: 500;
+                font-size: 12px;
+                color: #46526b
+            }
+
+            @media (max-width: 1050px) {
+                .clients-grid {
+                    grid-template-columns:repeat(2, minmax(0, 1fr))
+                }
+            }
+
+            @media (max-width: 780px) {
+                .sidebar {
+                    transform: translateX(-100%);
+                    box-shadow: 10px 0 30px rgba(0, 0, 0, .15)
+                }
+
+                .sidebar.open {
+                    transform: translateX(0)
+                }
+
+                .main {
+                    margin-left: 0;
+                    width: 100%
+                }
+
+                .mobile-toggle {
+                    display: block;
+                    margin-right: 14px
+                }
+
+                .topbar {
+                    padding: 0 20px
+                }
+
+                .crumbs {
+                    display: none
+                }
+
+                .page {
+                    padding: 28px 18px
+                }
+
+                .page-heading {
+                    display: block
+                }
+
+                .primary-btn {
+                    display: inline-block;
+                    margin-top: 18px
+                }
+
+                .toolbar {
+                    align-items: stretch;
+                    flex-direction: column
+                }
+
+                .search-form {
+                    max-width: none
+                }
+
+                .catalog-meta {
+                    padding-left: 2px
+                }
+            }
+
+            @media (max-width: 560px) {
+                h1 {
+                    font-size: 24px
+                }
+
+                .profile-name, .profile-role {
+                    display: none
+                }
+
+                .profile {
+                    padding-left: 10px
+                }
+
+                .client-panel {
+                    padding: 20px 15px
+                }
+
+                .clients-grid {
+                    grid-template-columns:1fr;
+                    gap: 13px
+                }
+
+                .panel-head {
+                    display: block
+                }
+
+                .view-label {
+                    display: block;
+                    margin-top: 6px
+                }
+
+                .search-input {
+                    min-width: 0
+                }
+
+                .client-card {
+                    padding: 16px
+                }
+            }
+        </style>
+        </th:block>
+    </head>
+    <body>
+        <th:block th:fragment="content">
+            <section class="page">
+                <div class="page-heading">
+                    <div><p class="eyebrow">Base clients</p>
+                        <h1>Vos clients</h1>
+                        <p class="subtitle">Retrouvez les informations et les opérations associées à chaque client.</p>
+                    </div>
+                    <a class="primary-btn" th:href="@{/clients/add}"><i class="fa fa-plus"></i> Nouveau client</a>
+                </div>
+                <div th:if="${error}" class="alert alert-danger" role="alert"
+                     style="border:0;border-radius:12px;background:#fff0f1;color:#a23e4b;padding:13px 17px;margin-bottom:20px">
+                    <i class="fa fa-exclamation-circle mr-2"></i><span th:text="${error}"></span></div>
+                <div class="toolbar">
+                    <!--<form class="search-form" th:action="@{/gharnata/list-clients}" method="post">
+                        <input list="codes" class="search-input" name="ice"
+                               placeholder="Rechercher par ICE, C.I.N ou nom du client" required autofocus>
+                        <datalist id="codes">
+                            <th:block th:each="client : ${clients}">
+                                <option th:value="${client.ice}" th:text="${client.ste}"></option>
+                            </th:block>
+                        </datalist>
+                        <button class="search-btn" type="submit" aria-label="Rechercher"><i class="fa fa-search"></i>
+                        </button>
+                    </form>-->
+                    <form class="search-form" th:action="@{/clients/list}" method="get" id="clientSearchForm">
+                        <div class="search-wrapper">
+                            <input type="text" class="control" id="searchClient" placeholder="ICE, C.I.N ou nom du client" autocomplete="off"
+                                   required autofocus>
+                            <!-- ID du produit sélectionné -->
+                            <input type="hidden" id="clientId" name="clientId">
+                            <!-- Suggestions -->
+                            <ul id="clientSuggestions"
+                                class="list-group position-absolute w-100 mt-1 shadow-sm"
+                                style="z-index:1050;top:100%;left:0;max-height:200px;overflow-y:auto;">
+                            </ul>
+                        </div>
+                        <button class="search-btn" type="submit" aria-label="Rechercher">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </form>
+                    <div class="catalog-meta"><i class="fa fa-users"></i> Répertoire clients</div>
+                </div>
+                <div class="client-panel">
+                    <div class="panel-head"><h2>Liste des clients</h2><span class="view-label"><i
+                            class="fa fa-th-large"></i> Affichage en cartes</span></div>
+                    <div class="clients-grid">
+                        <th:block th:each="client : ${clients}">
+                            <article class="client-card" th:if="${!client.isSuprimme()}">
+                                <div class="client-top">
+                                    <div class="client-avatar">
+                                        <i th:if="${client.getType() == 'societe'}" class="fa fa-building-o"></i>
+                                        <i th:if="${client.getType() == 'personne'}" class="fa fa-user"></i>
+                                    </div>
+                                    <div class="client-heading">
+                                        <h3 th:text="${client.ste}"></h3>
+                                        <p class="type-badge" th:if="${client.getType() == 'societe'}">Société</p>
+                                        <p class="type-badge" th:if="${client.getType() == 'personne'}">Personne</p>
+                                    </div>
+                                </div>
+                                <ul class="client-facts">
+                                    <li><i class="fa fa-id-card-o"></i><strong th:if="${client.getType() == 'societe'}">I.C.E
+                                        :</strong><strong th:if="${client.getType() == 'personne'}">C.I.N :</strong> <span
+                                            th:text="${client.ice}"></span></li>
+                                    <li><i class="fa fa-phone"></i><strong>Téléphone :</strong> <span
+                                            th:text="${client.tel}"></span></li>
+                                </ul>
+                                <div class="client-actions">
+                                    <a class="action-btn" th:href="@{/clients/{id}/details(id=${client.id})}">
+                                        <i class="fa fa-info-circle"></i> Détails
+                                    </a>
+                                    <a class="action-btn" th:href="@{/clients/{id}/modify(id=${client.id})}">
+                                        <i class="fa fa-edit"></i> Modifier
+                                    </a>
+                                    <!--<a class="action-btn delete" th:href="@{/gharnata/delete-client/{id}(id=${client.id})}" onclick="return confirm('Voulez vous vraiment supprimer ce client ?');">
+                                      <i class="fa fa-trash"></i>
+                                    </a>-->
+                                    <form th:action="@{/clients/{id}/delete(id=${client.id})}"
+                                          method="post"
+                                          style="display: inline;"
+                                          onsubmit="return confirm('Voulez vous vraiment supprimer ce client ?');">
+
+                                        <button type="submit" class="action-btn delete">
+                                            <i class="fa fa-trash"></i>
+                                        </button>
+
+                                    </form>
+                                    <a class="action-btn order" th:href="@{/clients/{id}/commands/new(id=${client.id})}">
+                                        <i class="fa fa-arrow-up"></i> Commander
+                                    </a>
+                                </div>
+                            </article>
+                        </th:block>
+                        <div th:if="${clients == null or #lists.isEmpty(clients)}" class="empty-state"><i
+                                class="fa fa-users"></i>
+                            <h3>Aucun client trouvé</h3>
+                            <p>Ajoutez votre premier client ou modifiez votre recherche.</p></div>
+                    </div>
+                </div>
+                <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
+            </section>
+        </th:block>
+        <th:block th:fragment="modals">
+        </th:block>
+        <th:block th:fragment="pageJs">
+            <script>
+                (function () {
+                    var sidebar = document.getElementById('sidebar'), toggle = document.getElementById('sidebarToggle');
+                    if (toggle) toggle.addEventListener('click', function () {
+                        sidebar.classList.toggle('open')
+                    });
+                    document.addEventListener('click', function (e) {
+                        if (window.innerWidth <= 780 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) sidebar.classList.remove('open')
+                    });
+                }());
+            </script>
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+
+                    const searchInput = document.getElementById("searchClient");
+                    const suggestions = document.getElementById("clientSuggestions");
+                    const hiddenClientId = document.getElementById("clientId");
+                    const form = document.getElementById("clientSearchForm");
+
+                    // Permet d'attendre avant d'envoyer la requête
+                    let searchTimeout;
+                    // Permet d'identifier la requête la plus récente
+                    let searchRequestId = 0;
+
+                    async function searchClients() {
+                        const query = searchInput.value.trim();
+                        hiddenClientId.value = "";
+                        suggestions.innerHTML = "";
+                        if (query.length < 1) {
+                            return;
+                        }
+                        // Identifiant de cette recherche
+                        const requestId = ++searchRequestId;
+                        try {
+                            const response = await fetch(
+                                `/clients/api/search?q=${encodeURIComponent(query)}`
+                            );
+                            if (!response.ok) {
+                                throw new Error("Erreur lors de la recherche");
+                            }
+                            const clients = await response.json();
+                            /*
+                             * Si une nouvelle recherche a été lancée entre-temps,
+                             * on ignore le résultat de cette ancienne recherche.
+                             */
+                            if (requestId !== searchRequestId) {
+                                return;
+                            }
+                            suggestions.innerHTML = "";
+                            if (clients.length > 0) {
+                                clients.forEach(client => {
+                                    const li = document.createElement("li");
+                                    li.classList.add(
+                                        "list-group-item",
+                                        "list-group-item-action",
+                                        "p-2",
+                                        "small"
+                                    );
+
+                                    li.innerHTML = `
+                            <div>
+                                <strong>${client.ste}</strong><br>
+                                <small class="text-muted">
+                                    ICE / CIN : ${client.ice}
+                                </small>
+                            </div>
+                        `;
+
+                                    li.addEventListener("click", () => {
+                                        searchInput.value =
+                                            `${client.ste} - ${client.ice}`;
+                                        hiddenClientId.value = client.id;
+                                        suggestions.innerHTML = "";
+                                    });
+                                    suggestions.appendChild(li);
+                                });
+                            } else {
+                                const li = document.createElement("li");
+                                li.classList.add(
+                                    "list-group-item",
+                                    "text-muted",
+                                    "small"
+                                );
+                                li.textContent = "Aucun client trouvé";
+                                suggestions.appendChild(li);
+                            }
+                        } catch (error) {
+                            console.error("Erreur recherche client :", error);
+                        }
+                    }
+                    // Recherche lorsque l'utilisateur écrit
+                    searchInput.addEventListener("input", () => {
+
+                        // Annule le délai précédent
+                        clearTimeout(searchTimeout);
+
+                        // Une nouvelle saisie annule la sélection précédente
+                        hiddenClientId.value = "";
+
+                        // Efface immédiatement les anciennes suggestions
+                        suggestions.innerHTML = "";
+
+                        /*
+                         * Attend 300 ms après la dernière frappe
+                         * avant d'envoyer la requête.
+                         */
+                        searchTimeout = setTimeout(() => {
+                            searchClients();
+                        }, 300);
+                    });
+                    // Réafficher les suggestions lorsqu'on revient dans l'input
+                    searchInput.addEventListener("focus", () => {
+                        if (searchInput.value.trim().length > 0) {
+                            // On peut rechercher immédiatement au focus
+                            searchClients();
+                        }
+                    });
+                    // Fermer les suggestions lorsqu'on clique ailleurs
+                    document.addEventListener("click", (event) => {
+                        if (!event.target.closest("#searchClient") &&
+                            !event.target.closest("#clientSuggestions")) {
+                            suggestions.innerHTML = "";
+                        }
+                    });
+                    // Vérification avant soumission
+                    form.addEventListener("submit", (event) => {
+                        if (!hiddenClientId.value) {
+                            event.preventDefault();
+                            alert("Veuillez sélectionner un client dans la liste.");
+                            searchInput.focus();
+                        }
+                    });
+                });
+            </script>
+        </th:block>
+    </body>
+</html>

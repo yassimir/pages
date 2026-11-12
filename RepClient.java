@@ -4,7 +4,9 @@ import com.gharnata.entity.Client;
 import com.gharnata.entity.Produit;
 import com.gharnata.entity.dto.ClientDTO;
 import com.gharnata.entity.dto.ProductDTO;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -28,6 +30,10 @@ public interface RepClient extends JpaRepository<Client, Long> {
     WHERE LOWER(c.ste) LIKE LOWER(CONCAT('%', :query, '%'))
        OR LOWER(c.ice) LIKE LOWER(CONCAT('%', :query, '%'))
     ORDER BY c.ste
-""")
+    """)
     List<Client> searchClients(@Param("query") String query);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c FROM Client c WHERE c.id = :id")
+    java.util.Optional<Client> findByIdForUpdate(@Param("id") Long id);
 }
