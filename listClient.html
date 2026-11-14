@@ -350,7 +350,7 @@
                 flex: 1
             }
 
-            .search-input {
+            /*.search-input {
                 height: 45px;
                 border: 1px solid #dfe4ee;
                 border-right: 0;
@@ -361,6 +361,22 @@
                 flex: 1;
                 color: var(--ink);
                 font-size: 13px
+            }*/
+
+            .search-input {
+                height: 45px;
+                width: 100%;
+                min-width: 0;
+                box-sizing: border-box;
+                border: 1px solid #dfe4ee;
+                border-right: 0;
+                border-radius: 9px 0 0 9px;
+                background: #fbfcfe;
+                padding: 0 14px;
+                outline: none;
+                flex: 1;
+                color: var(--ink);
+                font-size: 13px;
             }
 
             .search-input:focus {
@@ -627,6 +643,66 @@
                 color: #46526b
             }
 
+            .client-filter {
+                width: 180px;
+                flex-shrink: 0;
+            }
+
+            .client-filter select {
+                width: 100%;
+            }
+
+            .pagination-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 15px;
+                margin-top: 25px;
+                padding-top: 20px;
+                border-top: 1px solid var(--line);
+            }
+
+            .pagination-info {
+                color: var(--muted);
+                font-size: 12px;
+            }
+
+            .pagination-buttons {
+                display: flex;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .pagination-btn,
+            .pagination-number {
+                min-width: 34px;
+                height: 34px;
+                padding: 0 10px;
+                display: inline-flex;
+                justify-content: center;
+                align-items: center;
+                border: 1px solid var(--line);
+                border-radius: 7px;
+                background: #fff;
+                color: var(--ink);
+                font-size: 12px;
+            }
+
+            .pagination-btn:hover,
+            .pagination-number:hover,
+            .pagination-number.active {
+                background: var(--blue);
+                border-color: var(--blue);
+                color: #fff;
+            }
+
+            .pagination-btn.disabled {
+                opacity: .4;
+                pointer-events: none;
+            }
+
             @media (max-width: 1050px) {
                 .clients-grid {
                     grid-template-columns:repeat(2, minmax(0, 1fr))
@@ -686,6 +762,10 @@
                 .catalog-meta {
                     padding-left: 2px
                 }
+
+                .client-filter {
+                    width: 100%;
+                }
             }
 
             @media (max-width: 560px) {
@@ -726,6 +806,11 @@
                 .client-card {
                     padding: 16px
                 }
+
+                .pagination-container {
+                    flex-direction: column;
+                    align-items: flex-start;
+                }
             }
         </style>
         </th:block>
@@ -755,13 +840,13 @@
                         <button class="search-btn" type="submit" aria-label="Rechercher"><i class="fa fa-search"></i>
                         </button>
                     </form>-->
-                    <form class="search-form" th:action="@{/clients/list}" method="get" id="clientSearchForm">
+                    <!--<form class="search-form" th:action="@{/clients/list}" method="get" id="clientSearchForm">
                         <div class="search-wrapper">
                             <input type="text" class="control" id="searchClient" placeholder="ICE, C.I.N ou nom du client" autocomplete="off"
                                    required autofocus>
-                            <!-- ID du produit sélectionné -->
+                            &lt;!&ndash; ID du produit sélectionné &ndash;&gt;
                             <input type="hidden" id="clientId" name="clientId">
-                            <!-- Suggestions -->
+                            &lt;!&ndash; Suggestions &ndash;&gt;
                             <ul id="clientSuggestions"
                                 class="list-group position-absolute w-100 mt-1 shadow-sm"
                                 style="z-index:1050;top:100%;left:0;max-height:200px;overflow-y:auto;">
@@ -770,6 +855,47 @@
                         <button class="search-btn" type="submit" aria-label="Rechercher">
                             <i class="fa fa-search"></i>
                         </button>
+                    </form>-->
+                    <form class="search-form"
+                          th:action="@{/clients}"
+                          method="get"
+                          id="clientSearchForm">
+
+                        <div class="search-wrapper">
+                            <input type="text"
+                                   class="search-input"
+                                   id="searchClient"
+                                   name="q"
+                                   th:value="${query}"
+                                   placeholder="Rechercher par nom, ICE / CIN ou téléphone"
+                                   autocomplete="off">
+
+                            <input type="hidden" id="clientId" name="clientId">
+
+                            <ul id="clientSuggestions"
+                                class="list-group position-absolute w-100 mt-1 shadow-sm"
+                                style="z-index:1050;top:100%;left:0;max-height:200px;overflow-y:auto;">
+                            </ul>
+                        </div>
+
+                        <button class="search-btn" type="submit" aria-label="Rechercher">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </form>
+                    <form method="get" th:action="@{/clients}" class="client-filter">
+                        <input type="hidden" name="q" th:value="${query}">
+
+                        <select name="type" class="control" onchange="this.form.submit()">
+                            <option value="" th:selected="${type == null or type == ''}">
+                                Tous les types
+                            </option>
+                            <option value="societe" th:selected="${type == 'societe'}">
+                                Sociétés
+                            </option>
+                            <option value="personne" th:selected="${type == 'personne'}">
+                                Personnes
+                            </option>
+                        </select>
                     </form>
                     <div class="catalog-meta"><i class="fa fa-users"></i> Répertoire clients</div>
                 </div>
@@ -827,6 +953,48 @@
                                 class="fa fa-users"></i>
                             <h3>Aucun client trouvé</h3>
                             <p>Ajoutez votre premier client ou modifiez votre recherche.</p></div>
+                    </div>
+                    <div class="pagination-container"
+                         th:if="${clientsPage != null and clientsPage.totalPages > 1}">
+
+                        <div class="pagination-info">
+                            Page <strong th:text="${clientsPage.number + 1}"></strong>
+                            sur <strong th:text="${clientsPage.totalPages}"></strong>
+                            — <span th:text="${clientsPage.totalElements}"></span> clients
+                        </div>
+
+                        <div class="pagination-buttons">
+
+                            <a th:if="${clientsPage.hasPrevious()}"
+                               th:href="@{/clients(page=${clientsPage.number - 1},q=${query},type=${type})}"
+                               class="pagination-btn">
+                                <i class="fa fa-chevron-left"></i> Précédent
+                            </a>
+
+                            <span th:unless="${clientsPage.hasPrevious()}"
+                                  class="pagination-btn disabled">
+                                <i class="fa fa-chevron-left"></i> Précédent
+                            </span>
+
+                            <a th:each="i : ${#numbers.sequence(0, clientsPage.totalPages - 1)}"
+                               th:href="@{/clients(page=${i},q=${query},type=${type})}"
+                               th:text="${i + 1}"
+                               th:classappend="${i == clientsPage.number} ? ' active' : ''"
+                               class="pagination-number">
+                            </a>
+
+                            <a th:if="${clientsPage.hasNext()}"
+                               th:href="@{/clients(page=${clientsPage.number + 1},q=${query},type=${type})}"
+                               class="pagination-btn">
+                                Suivant <i class="fa fa-chevron-right"></i>
+                            </a>
+
+                            <span th:unless="${clientsPage.hasNext()}"
+                                  class="pagination-btn disabled">
+                                Suivant <i class="fa fa-chevron-right"></i>
+                            </span>
+
+                        </div>
                     </div>
                 </div>
                 <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
@@ -960,11 +1128,9 @@
                         }
                     });
                     // Vérification avant soumission
-                    form.addEventListener("submit", (event) => {
+                    form.addEventListener("submit", () => {
                         if (!hiddenClientId.value) {
-                            event.preventDefault();
-                            alert("Veuillez sélectionner un client dans la liste.");
-                            searchInput.focus();
+                            hiddenClientId.value = "";
                         }
                     });
                 });

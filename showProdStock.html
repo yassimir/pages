@@ -317,41 +317,28 @@
                     align-items: center;
                     justify-content: space-between;
                     gap: 15px;
-                    margin-bottom: 22px
-                }
-
-                .search-form {
-                    display: flex;
-                    max-width: 620px;
-                    flex: 1
+                    margin-bottom: 22px;
                 }
 
                 .search-input {
                     height: 45px;
+                    width: 100%;
+                    min-width: 0;
+                    box-sizing: border-box;
                     border: 1px solid #dfe4ee;
                     border-right: 0;
                     border-radius: 9px 0 0 9px;
                     background: #fbfcfe;
                     padding: 0 14px;
                     outline: none;
-                    flex: 1;
                     color: var(--ink);
-                    font-size: 13px
+                    font-size: 13px;
                 }
 
                 .search-input:focus {
                     border-color: #7ea5fc;
                     box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
                     background: #fff
-                }
-
-                .search-btn {
-                    width: 49px;
-                    border: 0;
-                    border-radius: 0 9px 9px 0;
-                    background: var(--navy);
-                    color: #fff;
-                    font-size: 15px
                 }
 
                 .stock-meta {
@@ -661,7 +648,74 @@
                     color: var(--ink);
                 }
 
+                .search-form {
+                    display: grid;
+                    grid-template-columns: minmax(0, 1fr) 49px;
+                    gap: 0;
+                    flex: 1;
+                    min-width: 0;
+                }
+
+                .search-wrapper {
+                    position: relative;
+                    min-width: 0;
+                }
+
+                .search-btn {
+                    width: 49px;
+                    height: 45px;
+                    border: 0;
+                    border-radius: 0 9px 9px 0;
+                    background: var(--navy);
+                    color: #fff;
+                    font-size: 15px;
+                }
+
+                .search-card, .product-card {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 16px;
+                    box-shadow: var(--shadow)
+                }
+
+                .search-card {
+                    padding: 20px 23px;
+                    margin-bottom: 22px
+                }
+
+
+
+                #productSuggestions {
+                    margin: 0;
+                    padding: 0;
+                    list-style: none;
+                }
+                #productSuggestions .list-group-item {
+                    cursor: pointer;
+                    background-color: rgba(216, 215, 215, 0.96);
+                    color: #212529;
+                    border-color: rgba(204, 202, 202, 0.94);
+                    transition: background-color 0.15s ease;
+                }
+
+                #productSuggestions .list-group-item:hover {
+                    background-color: #cccbcb;
+                }
+
+                #productSuggestions .list-group-item small {
+                    color: #3e4243 !important;
+                }
+
                 @media (max-width: 780px) {
+                    .toolbar {
+                        align-items: stretch;
+                        flex-direction: column
+                    }
+
+                    .search-form {
+                        max-width: none
+                    }
+
                     .sidebar {
                         transform: translateX(-100%);
                         box-shadow: 10px 0 30px rgba(0, 0, 0, .15)
@@ -702,21 +756,20 @@
                         margin-top: 18px
                     }
 
-                    .toolbar {
-                        align-items: stretch;
-                        flex-direction: column
-                    }
-
-                    .search-form {
-                        max-width: none
-                    }
-
                     .stock-meta {
                         padding-left: 2px
+                    }
+
+                    .search-card, .product-card {
+                        padding: 21px 17px
                     }
                 }
 
                 @media (max-width: 560px) {
+                    .search-input {
+                        min-width: 0
+                    }
+
                     h1 {
                         font-size: 24px
                     }
@@ -749,10 +802,6 @@
                         width: 100%;
                         margin-top: 12px
                     }
-
-                    .search-input {
-                        min-width: 0
-                    }
                 }
             </style>
         </th:block>
@@ -768,18 +817,34 @@
                     <a class="primary-btn" th:href="@{/products/add}"><i class="fa fa-plus"></i> Ajouter un produit</a>
                 </div>
                 <div class="toolbar">
-                    <form class="search-form" th:action="@{/products/stock}" method="get">
-                        <input type="text"
-                               class="search-input"
-                               name="ref"
-                               th:value="${search}"
-                               placeholder="Rechercher par référence ou nom de produit"
-                               autofocus>
+                    <form class="search-form"
+                          th:action="@{/products/stock}"
+                          method="get"
+                          id="stockSearchForm">
 
-                        <button class="search-btn" type="submit" aria-label="Rechercher">
+                        <div class="search-wrapper">
+                            <input type="text"
+                                   class="search-input"
+                                   id="searchProduct"
+                                   name="ref"
+                                   th:value="${search}"
+                                   placeholder="Rechercher par référence ou nom de produit"
+                                   autocomplete="off">
+                            <ul id="productSuggestions"
+                                class="list-group position-absolute w-100 mt-1 shadow-sm"
+                                style="z-index:1050;top:100%;left:0;max-height:200px;overflow-y:auto;">
+                            </ul>
+
+                        </div>
+
+                        <button class="search-btn"
+                                type="submit"
+                                aria-label="Rechercher">
                             <i class="fa fa-search"></i>
                         </button>
+
                     </form>
+
                     <div class="stock-meta"><i class="fa fa-bar-chart"></i> Suivi des disponibilités</div>
                 </div>
                 <div class="stock-panel">
@@ -908,6 +973,128 @@
                         update()
                     });
                 }());
+            </script>
+            <script>
+                document.addEventListener("DOMContentLoaded", () => {
+
+                    const searchInput = document.getElementById("searchProduct");
+                    const suggestions = document.getElementById("productSuggestions");
+
+                    if (!searchInput || !suggestions) return;
+
+                    let searchTimeout;
+                    let searchRequestId = 0;
+
+                    async function searchProducts() {
+
+                        const query = searchInput.value.trim();
+
+                        suggestions.innerHTML = "";
+
+                        if (query.length < 1) return;
+
+                        const requestId = ++searchRequestId;
+
+                        try {
+                            const response = await fetch(
+                                `/products/api/search?q=${encodeURIComponent(query)}`
+                            );
+
+                            if (!response.ok) {
+                                throw new Error("Erreur lors de la recherche");
+                            }
+
+                            const products = await response.json();
+
+                            // Ignorer les anciennes réponses
+                            if (requestId !== searchRequestId) return;
+
+                            suggestions.innerHTML = "";
+
+                            if (products.length > 0) {
+
+                                products.forEach(product => {
+
+                                    const li = document.createElement("li");
+
+                                    li.classList.add(
+                                        "list-group-item",
+                                        "list-group-item-action"
+                                    );
+
+                                    const name = document.createElement("strong");
+                                    name.textContent = product.name;
+
+                                    const reference = document.createElement("small");
+                                    reference.textContent = "Référence : " + product.ref;
+
+                                    li.appendChild(name);
+                                    li.appendChild(document.createElement("br"));
+                                    li.appendChild(reference);
+
+                                    li.addEventListener("click", () => {
+
+                                        // La référence permet de retrouver précisément le produit
+                                        searchInput.value = product.ref;
+
+                                        suggestions.innerHTML = "";
+
+                                        document.getElementById("stockSearchForm").submit();
+                                    });
+
+                                    suggestions.appendChild(li);
+                                });
+
+                            } else {
+
+                                const li = document.createElement("li");
+
+                                li.classList.add(
+                                    "list-group-item",
+                                    "text-muted"
+                                );
+
+                                li.textContent = "Aucun produit trouvé";
+
+                                suggestions.appendChild(li);
+                            }
+
+                        } catch (error) {
+                            console.error("Erreur recherche produit :", error);
+                        }
+                    }
+
+                    // Recherche après 300 ms sans nouvelle frappe
+                    searchInput.addEventListener("input", () => {
+
+                        clearTimeout(searchTimeout);
+
+                        suggestions.innerHTML = "";
+
+                        searchTimeout = setTimeout(() => {
+                            searchProducts();
+                        }, 300);
+                    });
+
+                    // Réafficher les suggestions au focus
+                    searchInput.addEventListener("focus", () => {
+
+                        if (searchInput.value.trim().length > 0) {
+                            searchProducts();
+                        }
+                    });
+
+                    // Fermer les suggestions en cliquant ailleurs
+                    document.addEventListener("click", event => {
+
+                        if (!event.target.closest("#searchProduct") &&
+                            !event.target.closest("#productSuggestions")) {
+
+                            suggestions.innerHTML = "";
+                        }
+                    });
+
+                });
             </script>
         </th:block>
     </body>
