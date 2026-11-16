@@ -58,6 +58,10 @@ public class Commande {
     @OneToOne(mappedBy = "commande", fetch = FetchType.LAZY)
     private Bon bon;
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "utilisateur_id", nullable = false)
+    private Utilisateur utilisateur;
+
     /*@OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
     private List<Facture> factures;*/
     /*@OneToMany(mappedBy = "commande", cascade = CascadeType.ALL)
@@ -177,5 +181,13 @@ public class Commande {
 
     public void setBon(Bon bon) {
         this.bon = bon;
+    }
+
+    public Utilisateur getUtilisateur() {
+        return utilisateur;
+    }
+
+    public void setUtilisateur(Utilisateur utilisateur) {
+        this.utilisateur = utilisateur;
     }
 }

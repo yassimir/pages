@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(
+          ~{::content},
+          ~{::modals},
+          ${breadcrumbs},
+          'Gharnata | Commandes',
+          ~{::pageCss},
+          ~{::pageJs}
+      )}">
+
+    <head>
+        <th:block th:fragment="pageCss">
+
+            <meta name="description" content="Suivi des commandes Gharnata">
+            <style>
+                :root {
+                    --ink: #172033;
+                    --muted: #7e889d;
+                    --line: #e8ebf2;
+                    --surface: #fff;
+                    --canvas: #f5f7fb;
+                    --navy: #1c2742;
+                    --blue: #3977f6;
+                    --blue-soft: #edf3ff;
+                    --green: #16a37a;
+                    --orange: #f59e0b;
+                    --red: #e45f68;
+                    --shadow: 0 16px 40px rgba(35, 49, 85, .08)
+                }
+
+                * {
+                    box-sizing: border-box
+                }
+
+                body {
+                    margin: 0;
+                    background: var(--canvas);
+                    color: var(--ink);
+                    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    font-size: 14px
+                }
+
+                a {
+                    color: inherit;
+                    text-decoration: none
+                }
+
+                a:hover {
+                    text-decoration: none
+                }
+
+                .app-shell {
+                    min-height: 100vh;
+                    display: flex
+                }
+
+                .sidebar {
+                    width: 260px;
+                    flex: 0 0 260px;
+                    min-height: 100vh;
+                    background: var(--navy);
+                    color: #aeb9d0;
+                    padding: 22px 14px;
+                    position: fixed;
+                    z-index: 20;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    transition: transform .25s ease
+                }
+
+                .menu-label {
+                    padding: 0 14px;
+                    color: #6f7e9f;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 1.3px;
+                    margin: 19px 0 9px;
+                    font-weight: 700
+                }
+
+                .nav-list {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0
+                }
+
+                .nav-list li {
+                    margin: 3px 0
+                }
+
+                .nav-list > li > a, .nav-list .submenu a {
+                    display: flex;
+                    align-items: center;
+                    min-height: 45px;
+                    border-radius: 10px;
+                    padding: 0 14px;
+                    transition: all .2s
+                }
+
+                .nav-list > li > a:hover, .nav-list .submenu a:hover {
+                    background: rgba(255, 255, 255, .07);
+                    color: #fff
+                }
+
+                .nav-list > li > a i {
+                    width: 27px;
+                    color: #8493b2;
+                    font-size: 16px
+                }
+
+                .nav-list > li.active > a {
+                    background: linear-gradient(90deg, rgba(57, 119, 246, .25), rgba(57, 119, 246, .08));
+                    color: #fff;
+                    box-shadow: inset 3px 0 var(--blue)
+                }
+
+                .nav-list > li.active > a i {
+                    color: #73a0ff
+                }
+
+                .chevron {
+                    margin-left: auto !important;
+                    width: auto !important;
+                    font-size: 11px !important;
+                    color: #7483a2 !important
+                }
+
+                .submenu {
+                    list-style: none;
+                    margin: 2px 0 7px 27px;
+                    padding: 0 0 0 12px;
+                    border-left: 1px solid #34415e
+                }
+
+                .submenu a {
+                    min-height: 35px !important;
+                    font-size: 12px;
+                    padding: 0 10px !important
+                }
+
+                .submenu a.current {
+                    color: #80a7ff;
+                    font-weight: 600
+                }
+
+                .sidebar-bottom {
+                    position: absolute;
+                    left: 14px;
+                    right: 14px;
+                    bottom: 20px;
+                    border-top: 1px solid rgba(255, 255, 255, .08);
+                    padding: 17px 12px 0;
+                    color: #8492b0;
+                    font-size: 11px
+                }
+
+                .sidebar-bottom i {
+                    color: #63c99f;
+                    margin-right: 7px
+                }
+
+                .main {
+                    margin-left: 260px;
+                    width: calc(100% - 260px);
+                    min-width: 0
+                }
+
+                .topbar {
+                    height: 76px;
+                    background: rgba(255, 255, 255, .92);
+                    border-bottom: 1px solid var(--line);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0 4.2%;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                    backdrop-filter: blur(14px)
+                }
+
+                .mobile-toggle {
+                    border: 0;
+                    background: transparent;
+                    color: var(--ink);
+                    font-size: 21px;
+                    display: none
+                }
+
+                .crumbs {
+                    color: var(--muted);
+                    font-size: 13px
+                }
+
+                .crumbs i {
+                    margin: 0 10px;
+                    font-size: 10px
+                }
+
+                .crumbs strong {
+                    color: var(--ink);
+                    font-weight: 600
+                }
+
+                .top-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 19px
+                }
+
+                .icon-btn {
+                    position: relative;
+                    color: #77839a;
+                    font-size: 18px
+                }
+
+                .notification {
+                    position: absolute;
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: var(--red);
+                    top: 0;
+                    right: -3px;
+                    border: 2px solid #fff;
+                    box-sizing: content-box
+                }
+
+                .profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    border-left: 1px solid var(--line);
+                    padding-left: 18px
+                }
+
+                .profile img {
+                    width: 35px;
+                    height: 35px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    background: #e9eef9
+                }
+
+                .profile-name {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--ink)
+                }
+
+                .profile-role {
+                    display: block;
+                    color: var(--muted);
+                    font-size: 11px;
+                    margin-top: 2px
+                }
+
+                .page {
+                    padding: 38px 4.2% 32px;
+                    max-width: 1500px
+                }
+
+                .page-heading {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: space-between;
+                    margin-bottom: 27px
+                }
+
+                .eyebrow {
+                    color: var(--blue);
+                    font-size: 11px;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 1.5px;
+                    margin: 0 0 9px
+                }
+
+                h1 {
+                    font-size: 28px;
+                    margin: 0;
+                    letter-spacing: -.7px;
+                    font-weight: 750
+                }
+
+                .subtitle {
+                    margin: 8px 0 0;
+                    color: var(--muted);
+                    font-size: 14px
+                }
+
+                .primary-btn {
+                    background: var(--blue);
+                    color: #fff;
+                    border-radius: 9px;
+                    padding: 12px 17px;
+                    font-size: 12px;
+                    font-weight: 700;
+                    box-shadow: 0 7px 15px rgba(57, 119, 246, .2)
+                }
+
+                .primary-btn i {
+                    margin-right: 7px
+                }
+
+                .stats {
+                    display: grid;
+                    grid-template-columns:repeat(3, 1fr);
+                    gap: 16px;
+                    margin-bottom: 22px
+                }
+
+                .stat {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 14px;
+                    padding: 17px 19px;
+                    box-shadow: var(--shadow);
+                    display: flex;
+                    align-items: center;
+                    gap: 13px
+                }
+
+                .stat-icon {
+                    width: 37px;
+                    height: 37px;
+                    border-radius: 10px;
+                    background: var(--blue-soft);
+                    color: var(--blue);
+                    display: grid;
+                    place-items: center;
+                    font-size: 16px
+                }
+
+                .stat:nth-child(2) .stat-icon {
+                    background: #e9faf4;
+                    color: var(--green)
+                }
+
+                .stat:nth-child(3) .stat-icon {
+                    background: #fff5df;
+                    color: var(--orange)
+                }
+
+                .stat-label {
+                    display: block;
+                    color: var(--muted);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: .7px;
+                    font-weight: 800
+                }
+
+                .stat-value {
+                    display: block;
+                    color: var(--ink);
+                    font-size: 18px;
+                    font-weight: 800;
+                    margin-top: 4px
+                }
+
+                .order-panel {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 16px;
+                    padding: 26px 25px 22px;
+                    box-shadow: var(--shadow)
+                }
+
+                .panel-head {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 20px
+                }
+
+                .panel-head h2 {
+                    font-size: 17px;
+                    margin: 0;
+                    font-weight: 700
+                }
+
+                .panel-head span {
+                    color: var(--muted);
+                    font-size: 11px
+                }
+
+                .table-wrap {
+                    overflow-x: auto;
+                    border: 1px solid var(--line);
+                    border-radius: 12px
+                }
+
+                .orders-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    min-width: 760px
+                }
+
+                .orders-table thead {
+                    background: #f8f9fc
+                }
+
+                .orders-table th {
+                    color: #7a859a;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: .7px;
+                    font-weight: 800;
+                    padding: 14px 15px;
+                    text-align: left;
+                    border-bottom: 1px solid var(--line);
+                    white-space: nowrap
+                }
+
+                .orders-table td {
+                    padding: 15px;
+                    color: #58657c;
+                    font-size: 12px;
+                    border-bottom: 1px solid var(--line);
+                    vertical-align: middle
+                }
+
+                .orders-table tbody tr:last-child td {
+                    border-bottom: 0
+                }
+
+                .orders-table tbody tr:hover {
+                    background: #fbfcff
+                }
+
+                .order-id {
+                    color: var(--blue);
+                    font-weight: 800
+                }
+
+                .client-name {
+                    color: var(--ink);
+                    font-weight: 700
+                }
+
+                .amount {
+                    color: var(--ink);
+                    font-weight: 750
+                }
+
+                .status {
+                    display: inline-block;
+                    border-radius: 20px;
+                    padding: 6px 10px;
+                    font-size: 10px;
+                    font-weight: 800
+                }
+
+                .paid {
+                    background: #d8fff0;
+                    color: #14795d
+                }
+
+                .part-paid {
+                    background: #fff3d6;
+                    color: #a56a00
+                }
+
+                .not-paid {
+                    background: #fbdede;
+                    color: #c83b3b
+                }
+
+                .confirmed {
+                    background: #e9faf4;
+                    color: #14795d
+                }
+
+                .pending {
+                    background: #fff0f1;
+                    color: #ad4550
+                }
+
+                .details-btn {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 5px;
+                    color: var(--blue);
+                    background: var(--blue-soft);
+                    border-radius: 7px;
+                    padding: 8px 10px;
+                    font-size: 11px;
+                    font-weight: 700
+                }
+
+                .details-btn:hover {
+                    background: var(--blue);
+                    color: #fff
+                }
+
+                .confirm-btn {
+                    border: 0;
+                    border-radius: 7px;
+                    background: var(--blue);
+                    color: #fff;
+                    padding: 8px 10px;
+                    font-size: 11px;
+                    font-weight: 700
+                }
+
+                .confirm-btn:hover {
+                    background: #2864db
+                }
+
+                .date {
+                    color: #8f9aae;
+                    font-size: 11px
+                }
+
+                .empty-state {
+                    padding: 50px 20px;
+                    text-align: center;
+                    color: var(--muted)
+                }
+
+                .empty-state i {
+                    font-size: 38px;
+                    color: #c9d5eb;
+                    margin-bottom: 15px
+                }
+
+                .empty-state h3 {
+                    color: #4d5a72;
+                    font-size: 16px;
+                    margin: 0 0 7px
+                }
+
+                .empty-state p {
+                    font-size: 12px;
+                    margin: 0
+                }
+
+                .footer {
+                    color: #a2aabd;
+                    font-size: 11px;
+                    text-align: center;
+                    padding: 32px 0 4px
+                }
+
+                .modal-content {
+                    border: 0;
+                    border-radius: 16px;
+                    box-shadow: var(--shadow)
+                }
+
+                .modal-header, .modal-footer {
+                    border-color: var(--line);
+                    padding: 18px 22px
+                }
+
+                .modal-title {
+                    font-size: 17px;
+                    font-weight: 700
+                }
+
+                .modal-body {
+                    padding: 22px
+                }
+
+                .modal .close {
+                    font-size: 24px;
+                    font-weight: 400;
+                    color: #9ba5b8
+                }
+
+                .control {
+                    width: 100%;
+                    height: 47px;
+                    border: 1px solid #dfe4ee;
+                    border-radius: 9px;
+                    color: var(--ink);
+                    background: #fbfcfe;
+                    padding: 0 14px;
+                    outline: none;
+                    font-size: 13px
+                }
+
+                .check-row {
+                    display: flex;
+                    gap: 25px;
+                    margin-top: 14px
+                }
+
+                .check-row label {
+                    font-weight: 500;
+                    font-size: 12px;
+                    color: #46526b
+                }
+
+                @media (max-width: 800px) {
+                    .stats {
+                        grid-template-columns:1fr 1fr
+                    }
+
+                    .stats .stat:last-child {
+                        grid-column: 1/-1
+                    }
+                }
+
+                @media (max-width: 780px) {
+                    .sidebar {
+                        transform: translateX(-100%);
+                        box-shadow: 10px 0 30px rgba(0, 0, 0, .15)
+                    }
+
+                    .sidebar.open {
+                        transform: translateX(0)
+                    }
+
+                    .main {
+                        margin-left: 0;
+                        width: 100%
+                    }
+
+                    .mobile-toggle {
+                        display: block;
+                        margin-right: 14px
+                    }
+
+                    .topbar {
+                        padding: 0 20px
+                    }
+
+                    .crumbs {
+                        display: none
+                    }
+
+                    .page {
+                        padding: 28px 18px
+                    }
+
+                    .page-heading {
+                        display: block
+                    }
+
+                    .primary-btn {
+                        display: inline-block;
+                        margin-top: 18px
+                    }
+
+                    .stats {
+                        grid-template-columns:1fr
+                    }
+
+                    .stats .stat:last-child {
+                        grid-column: auto
+                    }
+                }
+
+                @media (max-width: 560px) {
+                    h1 {
+                        font-size: 24px
+                    }
+
+                    .profile-name, .profile-role {
+                        display: none
+                    }
+
+                    .profile {
+                        padding-left: 10px
+                    }
+
+                    .order-panel {
+                        padding: 20px 15px
+                    }
+
+                    .panel-head {
+                        display: block
+                    }
+
+                    .panel-head span {
+                        display: block;
+                        margin-top: 6px
+                    }
+                }
+            </style>
+        </th:block>
+    </head>
+    <body>
+        <th:block th:fragment="content">
+            <section class="page">
+                <div class="page-heading">
+                    <div><p class="eyebrow">Suivi commercial</p>
+                        <h1>Commandes</h1>
+                        <p class="subtitle">Suivez l'état des commandes, les règlements et les confirmations.</p></div>
+                    <a class="primary-btn" th:href="@{/commands/new}"><i class="fa fa-plus"></i> Nouvelle commande</a>
+                </div>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-icon"><i class="fa fa-archive"></i></div>
+                        <div><span class="stat-label">Total des commandes</span><span class="stat-value"
+                                                                                      th:text="${#lists.size(commands)}">—</span>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-icon"><i class="fa fa-check-circle"></i></div>
+                        <div><span class="stat-label">À traiter</span><span class="stat-value">Suivi actif</span></div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-icon"><i class="fa fa-line-chart"></i></div>
+                        <div><span class="stat-label">Gestion</span><span class="stat-value">En temps réel</span></div>
+                    </div>
+                </div>
+                <div class="order-panel">
+                    <div class="panel-head"><h2>Liste des commandes</h2><span><i class="fa fa-info-circle"></i> Cliquez sur une commande pour voir son détail</span>
+                    </div>
+                    <div class="table-wrap">
+                        <table class="orders-table">
+                            <thead>
+                            <tr>
+                                <th>Nº</th>
+                                <th>Client</th>
+                                <th>Montant HT</th>
+                                <th>Paiement</th>
+                                <th>Détails</th>
+                                <th>Confirmation</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <th:block th:each="command : ${commands}">
+                                <tr>
+                                    <td class="order-id" th:text="${command.id}"></td>
+                                    <td th:if="${!command.getClient().isSuprimme()}"><a class="client-name"
+                                                                                        th:href="@{/clients/{id}/details(id=${command.getClient().getId()})}"
+                                                                                        th:text="${command.getClient().ste}"></a>
+                                    </td>
+                                    <td th:if="${command.getClient().isSuprimme()}"><span class="client-name"
+                                                                                          th:text="${command.getClient().ste}"></span>
+                                    </td>
+                                    <td class="amount" th:text="${command.montantHT + ' DH'}"></td>
+                                    <td>
+                                    <span class="status paid" th:if="${command.getStatutPaiement().name()=='PAYEE'}">
+                                        <i class="fa fa-check mr-1"></i> Payée</span>
+                                        <span class="status part-paid" th:if="${command.getStatutPaiement().name()=='PARTIELLEMENT_PAYEE'}"><i
+                                                class="fa fa-clock-o mr-1"></i> Partiellement Payée</span>
+                                        <span class="status not-paid" th:if="${command.getStatutPaiement().name()=='NON_PAYEE'}"><i
+                                                class="fa fa-exclamation-circle mr-1"></i> Non Payée</span>
+                                    </td>
+                                    <td>
+                                        <a class="details-btn" th:href="@{/commands/{id}/details(id=${command.id})}">
+                                            <i class="fa fa-eye"></i> Voir</a>
+                                    </td>
+                                    <td>
+                                        <a th:if="${!command.isConfirme()}" class="confirm-btn"
+                                           th:href="@{/commands/confirme-cmd/0/{id}(id=${command.id})}"
+                                           th:onclick="return confirm('Confirmer la commande nº ' + /*[[${command.id + ' de '+command.getClient().ste}]]*/);"><i
+                                                class="fa fa-check"></i> Confirmer</a><span th:if="${command.isConfirme()}"
+                                                                                            class="status confirmed"><i
+                                            class="fa fa-check"></i> Confirmée</span><span th:if="${command.isConfirme()}"
+                                                                                           class="date"
+                                                                                           th:text="${' le '+command.dateConfirmation}"></span>
+                                    </td>
+                                </tr>
+                            </th:block>
+                            <tr th:if="${commands == null or #lists.isEmpty(commands)}">
+                                <td colspan="6">
+                                    <div class="empty-state"><i class="fa fa-archive"></i>
+                                        <h3>Aucune commande trouvée</h3>
+                                        <p>Les nouvelles commandes apparaîtront ici.</p></div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
+            </section>
+        </th:block>
+        <th:block th:fragment="modals">
+
+        </th:block>
+        <th:block th:fragment="pageJs">
+            <script>
+                (function () {
+                    var sidebar = document.getElementById('sidebar'), toggle = document.getElementById('sidebarToggle');
+                    if (toggle) toggle.addEventListener('click', function () {
+                        sidebar.classList.toggle('open')
+                    });
+                    document.addEventListener('click', function (e) {
+                        if (window.innerWidth <= 780 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) sidebar.classList.remove('open')
+                    });
+                }());
+            </script>
+        </th:block>
+    </body>
+</html>
+
