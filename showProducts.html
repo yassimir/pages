@@ -350,6 +350,27 @@
                     max-width: 620px;
                     flex: 1
                 }
+                .category-form {
+                    width: 260px;
+                    flex: 0 0 260px;
+                }
+
+                .category-select {
+                    width: 100%;
+                    height: 45px;
+                    border: 1px solid #dfe4ee;
+                    border-radius: 9px;
+                    background: #fbfcfe;
+                    color: var(--ink);
+                    padding: 0 12px;
+                    outline: none;
+                    font-size: 13px;
+                }
+
+                .category-select:focus {
+                    border-color: #7ea5fc;
+                    box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
+                }
 
                 .search-input {
                     height: 45px;
@@ -580,6 +601,11 @@
                 }
 
                 @media (max-width: 950px) {
+                    .category-form {
+                        width: 100%;
+                        flex: 1;
+                    }
+
                     .products-grid {
                         grid-template-columns:repeat(3, minmax(0, 1fr))
                     }
@@ -725,6 +751,27 @@
                         <button class="search-btn" type="submit">
                             <i class="fa fa-search"></i>
                         </button>
+                    </form>
+                    <form class="category-form"
+                          th:action="@{/products}"
+                          method="get"
+                          id="categoryFilterForm">
+
+                        <select class="category-select"
+                                name="categorieId"
+                                id="categoryFilter"
+                                onchange="this.form.submit()">
+
+                            <option value="">Toutes les catégories</option>
+
+                            <option th:each="cat : ${cats}"
+                                    th:value="${cat.id}"
+                                    th:text="${cat.lib}"
+                                    th:selected="${categorieId != null and categorieId == cat.id}">
+                            </option>
+
+                        </select>
+
                     </form>
                     <div class="catalog-meta"><i class="fa fa-cubes"></i> Catalogue disponible</div>
                 </div>
