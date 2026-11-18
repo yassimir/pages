@@ -342,7 +342,7 @@
                     align-items: center;
                     justify-content: space-between;
                     gap: 15px;
-                    margin-bottom: 22px
+                    margin-bottom: 22px;
                 }
 
                 .search-form {
@@ -353,6 +353,9 @@
 
                 .search-input {
                     height: 45px;
+                    width: 100%;
+                    min-width: 0;
+                    box-sizing: border-box;
                     border: 1px solid #dfe4ee;
                     border-right: 0;
                     border-radius: 9px 0 0 9px;
@@ -361,7 +364,7 @@
                     outline: none;
                     flex: 1;
                     color: var(--ink);
-                    font-size: 13px
+                    font-size: 13px;
                 }
 
                 .search-input:focus {
@@ -596,6 +599,11 @@
                 }
 
                 @media (max-width: 780px) {
+
+                    .toolbar {
+                        align-items: stretch;
+                        flex-direction: column
+                    }
                     .sidebar {
                         transform: translateX(-100%);
                         box-shadow: 10px 0 30px rgba(0, 0, 0, .15)
@@ -697,17 +705,24 @@
                 <div class="toolbar">
                     <form class="search-form" th:action="@{/products}" method="get" id="productSearchForm">
                         <div class="search-wrapper">
-                            <input type="text" class="control" id="searchProduct" placeholder="Référence ou nom du produit" autocomplete="off"
-                                   required autofocus>
-                            <!-- ID du produit sélectionné -->
+                            <input type="text"
+                                   class="search-input"
+                                   id="searchProduct"
+                                   name="q"
+                                   th:value="${query}"
+                                   placeholder="Référence ou nom du produit"
+                                   autocomplete="off">
+
                             <input type="hidden" id="productId" name="productId">
-                            <!-- Suggestions -->
+
+                            <!--<ul id="productSuggestions" class="suggestions-list"></ul>-->
                             <ul id="productSuggestions"
                                 class="list-group position-absolute w-100 mt-1 shadow-sm"
                                 style="z-index:1050;top:100%;left:0;max-height:200px;overflow-y:auto;">
                             </ul>
                         </div>
-                        <button class="search-btn" type="submit" aria-label="Rechercher">
+
+                        <button class="search-btn" type="submit">
                             <i class="fa fa-search"></i>
                         </button>
                     </form>
@@ -922,8 +937,7 @@
                         `;
 
                                     li.addEventListener("click", () => {
-                                        searchInput.value =
-                                            `${product.name} - ${product.ref}`;
+                                        searchInput.value = `${product.name} - ${product.ref}`;
                                         hiddenProductId.value = product.id;
                                         suggestions.innerHTML = "";
                                         document.getElementById("productSearchForm").submit();
