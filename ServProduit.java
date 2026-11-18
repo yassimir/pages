@@ -7,6 +7,8 @@ import com.gharnata.repository.RepCommande;
 import com.gharnata.repository.RepImage;
 import com.gharnata.repository.RepProduit;
 import com.gharnata.storage.StorageService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
@@ -222,5 +224,16 @@ public class ServProduit {
 
     public List<Produit> getAllByIds(List<Long> ids) {
         return this.repProduit.findAllById(ids);
+    }
+
+    public Page<Produit> getStockPage(String search, Pageable pageable) {
+        if (search != null) {
+            search = search.trim();
+            if (search.isEmpty()) {
+                search = null;
+            }
+        }
+
+        return repProduit.findStockPage(search, pageable);
     }
 }

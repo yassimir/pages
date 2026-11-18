@@ -4,11 +4,9 @@ import com.gharnata.entity.Categorie;
 import com.gharnata.entity.Produit;
 import com.gharnata.entity.dto.ProductDTO;
 import com.gharnata.repository.RepImage;
-import com.gharnata.service.ServImage;
-import com.gharnata.service.ServNotification;
-import com.gharnata.service.ServPanier;
-import com.gharnata.service.ServProduit;
+import com.gharnata.service.*;
 import com.gharnata.storage.StorageService;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -36,15 +34,18 @@ public class ProduitController {
     private final ServPanier servPanier;
     private final RepImage repImage;
     private final StorageService storageService;
+    private final ServParametre servParametre;
 
     public ProduitController(ServProduit servProduit, ServImage servImage, ServNotification servNotification,
-                             ServPanier servPanier, RepImage repImage, StorageService storageService) {
+                             ServPanier servPanier, RepImage repImage, StorageService storageService,
+                             ServParametre servParametre) {
         this.servProduit = servProduit;
         this.servImage = servImage;
         this.servNotification = servNotification;
         this.servPanier = servPanier;
         this.repImage = repImage;
         this.storageService = storageService;
+        this.servParametre = servParametre;
     }
 
     @GetMapping("/images/{id}")
@@ -160,7 +161,7 @@ public class ProduitController {
         return "gest/showProducts";
     }
 
-    @GetMapping("/stock")
+    /*@GetMapping("/stock")
     public String showProdSt(Model model, @RequestParam(value = "ref", required = false) String ref){
         List<Produit> lP = new ArrayList<>();
         if (ref != null) {
@@ -184,7 +185,159 @@ public class ProduitController {
                 "Page de stock"
         ));
         return "gest/showProdStock";
+    }*/
+
+    /*@GetMapping("/stock")
+    public String showProdSt(
+            Model model,
+            @RequestParam(value = "ref", required = false) String ref,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        // Limiter les tailles de page autorisées
+        if (size != 20 && size != 40 && size != 80) {
+            size = 20;
+        }
+
+        // Éviter les numéros de page négatifs
+        if (page < 0) {
+            page = 0;
+        }
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "id")
+        );
+
+        Page<Produit> produitsPage =
+                servProduit.getStockPage(ref, pageable);
+
+        // Numérotation continue entre les pages
+        List<Integer> indexs = new ArrayList<>();
+
+        int debut = page * size + 1;
+
+        for (int i = 0; i < produitsPage.getNumberOfElements(); i++) {
+            indexs.add(debut + i);
+        }
+
+        model.addAttribute("products", produitsPage.getContent());
+        model.addAttribute("idxs", indexs);
+
+        // La liste complète n'est plus nécessaire pour le datalist
+        model.addAttribute("prods", List.of());
+
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", produitsPage.getTotalPages());
+        model.addAttribute("totalElements", produitsPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("search", ref);
+
+        model.addAttribute("notif", servNotification.nbNotif());
+        model.addAttribute("cats", servProduit.getAllCats());
+
+        model.addAttribute("breadcrumbs", List.of(
+                "Gestion Commerciale",
+                "Produits et Stock",
+                "Page de stock"
+        ));
+
+        return "gest/showProdStock";
+    }*/
+
+    @GetMapping("/stock")
+    public String showProdSt(
+            Model model,
+            @RequestParam(value = "productId", required = false) Long productId,
+            @RequestParam(value = "q", required = false) String query,
+            @RequestParam(defaultValue = "0") int page) {
+
+        // Taille de page définie dans les paramètres globaux
+        int size = servParametre.getProduitsParPage();
+
+        page = Math.max(0, page);
+
+        Pageable pageable = PageRequest.of(
+                page,
+                size,
+                Sort.by(Sort.Direction.DESC, "id")
+        );
+
+        Page<Produit> produitsPage;
+
+        // Recherche par sélection dans l'autocomplétion
+        if (productId != null) {
+
+            Produit produit = servProduit.getProductById(productId);
+
+            if (produit == null) {
+                model.addAttribute("error", "Ce produit n'existe pas.");
+                produitsPage = new PageImpl<>(List.of(), pageable, 0);
+            } else {
+                produitsPage = new PageImpl<>(
+                        List.of(produit),
+                        pageable,
+                        1
+                );
+            }
+
+        } else {
+            // Recherche libre par nom ou référence
+            String recherche = (query == null || query.isBlank())
+                    ? null
+                    : query.trim();
+
+            produitsPage = servProduit.getStockPage(recherche, pageable);
+        }
+
+        // Éviter une page inexistante
+        if (produitsPage.getTotalPages() > 0
+                && page >= produitsPage.getTotalPages()) {
+
+            page = produitsPage.getTotalPages() - 1;
+
+            pageable = PageRequest.of(
+                    page,
+                    size,
+                    Sort.by(Sort.Direction.DESC, "id")
+            );
+
+            if (productId == null) {
+                produitsPage = servProduit.getStockPage(
+                        query == null || query.isBlank() ? null : query.trim(),
+                        pageable
+                );
+            }
+        }
+
+        List<Integer> indexs = new ArrayList<>();
+        int debut = page * size + 1;
+
+        for (int i = 0; i < produitsPage.getNumberOfElements(); i++) {
+            indexs.add(debut + i);
+        }
+
+        model.addAttribute("products", produitsPage.getContent());
+        model.addAttribute("idxs", indexs);
+        model.addAttribute("currentPage", page);
+        model.addAttribute("totalPages", produitsPage.getTotalPages());
+        model.addAttribute("totalElements", produitsPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("productId", productId);
+        model.addAttribute("query", query);
+        model.addAttribute("notif", servNotification.nbNotif());
+        model.addAttribute("cats", servProduit.getAllCats());
+
+        model.addAttribute("breadcrumbs", List.of(
+                "Gestion Commerciale",
+                "Produits et Stock",
+                "Page de stock"
+        ));
+
+        return "gest/showProdStock";
     }
+
     @PostMapping("/stock")
     public String showProdSt(@RequestParam("ref") String ref, RedirectAttributes attributes){
         attributes.addAttribute("ref", ref);

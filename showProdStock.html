@@ -826,10 +826,13 @@
                             <input type="text"
                                    class="search-input"
                                    id="searchProduct"
-                                   name="ref"
-                                   th:value="${search}"
+                                   name="q"
+                                   th:value="${query}"
                                    placeholder="Rechercher par référence ou nom de produit"
                                    autocomplete="off">
+
+                            <input type="hidden" id="productId" name="productId">
+
                             <ul id="productSuggestions"
                                 class="list-group position-absolute w-100 mt-1 shadow-sm"
                                 style="z-index:1050;top:100%;left:0;max-height:200px;overflow-y:auto;">
@@ -979,6 +982,8 @@
 
                     const searchInput = document.getElementById("searchProduct");
                     const suggestions = document.getElementById("productSuggestions");
+                    const hiddenProductId = document.getElementById("productId");
+                    const form = document.getElementById("stockSearchForm");
 
                     if (!searchInput || !suggestions) return;
 
@@ -988,7 +993,7 @@
                     async function searchProducts() {
 
                         const query = searchInput.value.trim();
-
+                        hiddenProductId.value = "";
                         suggestions.innerHTML = "";
 
                         if (query.length < 1) return;
@@ -1035,7 +1040,9 @@
                                     li.addEventListener("click", () => {
 
                                         // La référence permet de retrouver précisément le produit
-                                        searchInput.value = product.ref;
+                                        //searchInput.value = product.ref;
+                                        searchInput.value = `${product.name} - ${product.ref}`;
+                                        hiddenProductId.value = product.id;
 
                                         suggestions.innerHTML = "";
 
@@ -1069,6 +1076,9 @@
 
                         clearTimeout(searchTimeout);
 
+                        // Une nouvelle saisie annule la sélection précédente
+                        hiddenProductId.value = "";
+
                         suggestions.innerHTML = "";
 
                         searchTimeout = setTimeout(() => {
@@ -1091,6 +1101,13 @@
                             !event.target.closest("#productSuggestions")) {
 
                             suggestions.innerHTML = "";
+                        }
+                    });
+
+                    // Vérification avant soumission
+                    form.addEventListener("submit", () => {
+                        if (!hiddenProductId.value) {
+                            hiddenProductId.value = "";
                         }
                     });
 
