@@ -43,6 +43,7 @@ public class ServPaiement {
     private final StorageService storageService;
     private final RepImage repImage;
     private final RepClient repClient;
+    private final ServNotificationPaiement servNotificationPaiement;
 
     public ServPaiement(RePaiement rePaiement,
                         RepAffectationPaiement repAffectationPaiement,
@@ -51,7 +52,8 @@ public class ServPaiement {
                         UtilisateurConnecteService utilisateurConnecteService,
                         StorageService storageService,
                         RepImage repImage,
-                        RepClient repClient) {
+                        RepClient repClient,
+                        ServNotificationPaiement servNotificationPaiement) {
         this.rePaiement = rePaiement;
         this.repAffectationPaiement = repAffectationPaiement;
         this.repCommande = repCommande;
@@ -60,6 +62,7 @@ public class ServPaiement {
         this.storageService = storageService;
         this.repImage = repImage;
         this.repClient = repClient;
+        this.servNotificationPaiement = servNotificationPaiement;
     }
 
 
@@ -345,6 +348,9 @@ public class ServPaiement {
 
         paiement = rePaiement.save(paiement);
 
+        // Création de la notification de paiement en attente
+        servNotificationPaiement.creerNotificationPaiementEnAttente(paiement);
+
         // Aucun changement du statut de la commande ici.
         // Aucune affectation financière avant confirmation.
 
@@ -410,6 +416,9 @@ public class ServPaiement {
         paiement.setConfirmed(false);
 
         paiement = rePaiement.save(paiement);
+
+        // Création de la notification de paiement en attente
+        servNotificationPaiement.creerNotificationPaiementEnAttente(paiement);
 
         // Pas d'affectation automatique avant confirmation.
 
@@ -832,6 +841,9 @@ public class ServPaiement {
             // Affectation aux commandes les plus anciennes
             affecterAutomatiquement(paiement, client);
         }
+
+        // Résoudre toutes les notifications liées à ce paiement
+        servNotificationPaiement.resoudreNotificationsPaiement(paiementId);
 
         return paiement;
     }

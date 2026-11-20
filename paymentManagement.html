@@ -926,52 +926,76 @@
                                 </tbody>
                             </table>
                         </div>
-                        <!-- Pagination -->
+                        <!-- Pagination intelligente -->
                         <div class="d-flex justify-content-between align-items-center mt-3">
-                        <span>
-                            Page
-                            <strong th:text="${payments.number + 1}"></strong>
-                            sur
-                            <strong th:text="${payments.totalPages}"></strong>
-                            —
-                            <strong th:text="${payments.totalElements}"></strong>
-                            paiement(s)
-                        </span>
+
+    <span>
+        Page
+        <strong th:text="${payments.number + 1}"></strong>
+        sur
+        <strong th:text="${payments.totalPages}"></strong>
+        —
+        <strong th:text="${payments.totalElements}"></strong>
+        paiement(s)
+    </span>
+
                             <nav th:if="${payments.totalPages > 1}">
                                 <ul class="pagination pagination-sm mb-0">
+
+                                    <!-- Précédent -->
                                     <li class="page-item"
                                         th:classappend="${payments.first ? 'disabled' : ''}">
+
                                         <a class="page-link"
-                                           th:href="@{/payments/search(
-                                        page=${payments.number - 1},
-                                        size=${payments.size})}">
+                                           th:href="@{/gharnata/payments/search(
+                       page=${payments.number - 1},
+                       size=${payments.size}
+                   )}">
                                             Précédent
                                         </a>
-
                                     </li>
 
-                                    <li class="page-item"
-                                        th:each="i : ${#numbers.sequence(0, payments.totalPages - 1)}"
-                                        th:classappend="${i == payments.number ? 'active' : ''}">
+                                    <!-- Numéros de pages et ellipses -->
+                                    <th:block th:each="i : ${pageNumbers}">
 
-                                        <a class="page-link"
-                                           th:href="@{/payments/search(
-                                       page=${i},
-                                       size=${payments.size})}"
-                                           th:text="${i + 1}">
-                                        </a>
-                                    </li>
+                                        <!-- Points de suspension -->
+                                        <li class="page-item disabled"
+                                            th:if="${i == -1}">
+                                            <span class="page-link">…</span>
+                                        </li>
+
+                                        <!-- Numéro de page -->
+                                        <li class="page-item"
+                                            th:unless="${i == -1}"
+                                            th:classappend="${i == payments.number ? 'active' : ''}">
+
+                                            <a class="page-link"
+                                               th:href="@{/gharnata/payments/search(
+                           page=${i},
+                           size=${payments.size}
+                       )}"
+                                               th:text="${i + 1}">
+                                            </a>
+                                        </li>
+
+                                    </th:block>
+
+                                    <!-- Suivant -->
                                     <li class="page-item"
                                         th:classappend="${payments.last ? 'disabled' : ''}">
+
                                         <a class="page-link"
-                                           th:href="@{/payments/search(
-                                       page=${payments.number + 1},
-                                       size=${payments.size})}">
+                                           th:href="@{/gharnata/payments/search(
+                       page=${payments.number + 1},
+                       size=${payments.size}
+                   )}">
                                             Suivant
                                         </a>
                                     </li>
+
                                 </ul>
                             </nav>
+
                         </div>
                     </div>
                 </div>

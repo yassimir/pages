@@ -17,13 +17,16 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import java.util.ArrayList;
+import java.util.TreeSet;
+
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 
 
 @Controller
-@RequestMapping("/gharnata")
+@RequestMapping("/payments")
 public class PaymentController {
 
     private static final Set<String> MODES_PAIEMENT =
@@ -33,27 +36,24 @@ public class PaymentController {
     private final ServClient servClient;
     private final ServPaiement servPaiement;
     private final ServNotification servNotification;
-    private final ServProduit servProduit;
     private final ServFacture servFacture;
     private final ServCommande servCommande;
-    private final ServCompte servCompte;
+    private final ServParametre servParametre;
 
     public PaymentController(
             ServClient servClient,
             ServPaiement servPaiement,
             ServNotification servNotification,
-            ServProduit servProduit,
             ServFacture servFacture,
             ServCommande servCommande,
-            ServCompte servCompte) {
+            ServParametre servParametre) {
 
         this.servClient = servClient;
         this.servPaiement = servPaiement;
         this.servNotification = servNotification;
-        this.servProduit = servProduit;
         this.servFacture = servFacture;
         this.servCommande = servCommande;
-        this.servCompte = servCompte;
+        this.servParametre = servParametre;
     }
 
 
@@ -73,13 +73,62 @@ public class PaymentController {
 
         return "gest/paymentManagement";
     }*/
-    @GetMapping("/modify-payment")
+    @GetMapping("/modify")
     public String modifyPayment(Model model) {
         model.addAttribute("notif", servNotification.nbNotif());
         model.addAttribute("paiement", new Paiement());
         return "gest/modifyPayment";
     }
-    @GetMapping("/show-payments")
+
+    private List<Integer> construirePagination(Page<?> page) {
+
+        int totalPages = page.getTotalPages();
+
+        if (totalPages <= 0) {
+            return List.of();
+        }
+
+        int currentPage = page.getNumber();
+
+        TreeSet<Integer> pages = new TreeSet<>();
+
+        // Toujours afficher la première et la dernière page
+        pages.add(0);
+        pages.add(totalPages - 1);
+
+        // Afficher deux pages avant et deux pages après la page actuelle
+        for (int i = Math.max(1, currentPage - 2);
+             i <= Math.min(totalPages - 2, currentPage + 2);
+             i++) {
+
+            pages.add(i);
+        }
+
+        List<Integer> resultat = new ArrayList<>();
+
+        int precedente = -1;
+
+        for (Integer numero : pages) {
+
+            if (precedente != -1 && numero - precedente > 1) {
+
+                if (numero - precedente == 2) {
+                    // Une seule page manquante : on l'affiche directement
+                    resultat.add(precedente + 1);
+                } else {
+                    // Plusieurs pages manquantes : afficher ...
+                    resultat.add(-1);
+                }
+            }
+
+            resultat.add(numero);
+            precedente = numero;
+        }
+
+        return resultat;
+    }
+
+    @GetMapping
     public String showPayments(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -88,7 +137,10 @@ public class PaymentController {
             @RequestParam(required = false) String method,
             Model model) {
 
+
         page = Math.max(page, 0);
+
+        size = servParametre.getProduitsParPage();
         size = Math.min(Math.max(size, 1), 100);
 
         Pageable pageable = PageRequest.of(
@@ -102,14 +154,19 @@ public class PaymentController {
         );
 
         model.addAttribute("payments", paiements);
+        model.addAttribute("pageNumbers", construirePagination(paiements));
         model.addAttribute("q", q);
         model.addAttribute("status", status);
         model.addAttribute("method", method);
         model.addAttribute("notif", servNotification.nbNotif());
+        model.addAttribute("breadcrumbs", List.of(
+                "Gestion Commerciale",
+                "Paiements"
+        ));
 
         return "gest/paymentManagement";
     }
-    @GetMapping("/payments/search")
+    @GetMapping("/search")
     public String rechercherPaiements(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -119,6 +176,8 @@ public class PaymentController {
             Model model) {
 
         page = Math.max(page, 0);
+
+        size = servParametre.getProduitsParPage();
         size = Math.min(Math.max(size, 1), 100);
 
         Pageable pageable = PageRequest.of(
@@ -148,13 +207,14 @@ public class PaymentController {
         }
 
         model.addAttribute("payments", paiements);
+        model.addAttribute("pageNumbers", construirePagination(paiements));
         model.addAttribute("q", q);
         model.addAttribute("status", status);
         model.addAttribute("method", method);
 
         return "gest/paymentManagement :: paymentResults";
     }
-    @GetMapping("/payments/{id}/details")
+    @GetMapping("/{id}/details")
     @ResponseBody
     public PaiementDetailsDTO getPaymentDetails(@PathVariable Long id) {
 
@@ -178,7 +238,7 @@ public class PaymentController {
                 compte != null ? compte.getType().name() : null,
 
                 justificatif != null
-                        ? "/gharnata/images/" + justificatif.getId()
+                        ? "/products/images/" + justificatif.getId()
                         : null,
 
                 justificatif != null
@@ -187,7 +247,7 @@ public class PaymentController {
         );
     }
 
-    @PostMapping("/payments/{id}/confirm")
+    @PostMapping("/{id}/confirm")
     public String confirmerPaiement(
             @PathVariable Long id,
             RedirectAttributes attributes) {
@@ -215,34 +275,10 @@ public class PaymentController {
             );
         }
 
-        return "redirect:/gharnata/show-payments";
+        return "redirect:/payments";
     }
 
-    @GetMapping("/paiements/{id}")
-    public String showPaie(
-            Model model,
-            @PathVariable Long id) {
 
-        Client client = servClient.getClientById(id);
-        BigDecimal credit = servPaiement.calculerCreditClient(client);
-
-        if (client == null) {
-            throw new IllegalArgumentException("Client introuvable.");
-        }
-
-        List<Paiement> paiements =
-                servPaiement.getPaymentsByClient(client);
-
-        model.addAttribute("client", client);
-        model.addAttribute("clients", this.servClient.getAllClients());
-        model.addAttribute("payments", paiements);
-        model.addAttribute("notif", servNotification.nbNotif());
-        model.addAttribute("cats", servProduit.getAllCats());
-        model.addAttribute("credit", credit);
-        model.addAttribute("comptes", servCompte.getComptesActives());
-
-        return "gest/showClientPayments";
-    }
 
     /*
      * Paiement global du crédit d'un client.
@@ -251,7 +287,7 @@ public class PaymentController {
      * Il pourra ensuite être affecté à une ou plusieurs commandes.
      */
 
-    @PostMapping("/payment")
+    @PostMapping("/pay-global")
     public String payment(@RequestParam("montant") BigDecimal montant,
                           @RequestParam("idC") long idC,
                           @RequestParam("compteId") Long compteId,
@@ -265,10 +301,10 @@ public class PaymentController {
         Client client = servClient.getClientById(idC);
         if (client == null) {
             attributes.addFlashAttribute("error", "Client introuvable.");
-            return "redirect:/gharnata/list-clients";
+            return "redirect:/clients";
         }
 
-        String retour = "redirect:/gharnata/client-details/" + client.getId();
+        String retour = "redirect:/clients/"+client.getId()+"/details";
 
         if (montant == null || montant.compareTo(BigDecimal.ZERO) <= 0) {
             attributes.addFlashAttribute(
@@ -318,7 +354,7 @@ public class PaymentController {
 
         if (commande == null) {
             attributes.addFlashAttribute("error", "Commande introuvable.");
-            return "redirect:/gharnata/client-details/" + clientId;
+            return "redirect:/clients/"+clientId+"/details";
         }
 
         try {
@@ -360,17 +396,17 @@ public class PaymentController {
                     "Paiement enregistré en attente de confirmation. Aucune facture n'a été générée."
             );
 
-            return "redirect:/gharnata/command-details/" + commande.getId();
+            return "redirect:/commands/"+commande.getId()+"/details";
 
         } catch (IllegalArgumentException | IllegalStateException e) {
             attributes.addFlashAttribute("error", e.getMessage());
 
-            return "redirect:/gharnata/command-details/" + commande.getId();
+            return "redirect:/commands/"+commande.getId()+"/details";
         }
     }
 
 
-    @PostMapping("/paiements/{id}/facture")   // POST : la facture est créée en base
+    @PostMapping("{id}/facture")   // POST : la facture est créée en base
     public String genererFacturePaiement(@PathVariable Long id,
                                          @RequestParam(value = "categories", required = false) List<Long> categories,
                                          @RequestParam(value = "tmp", required = false) String tmp,
@@ -379,9 +415,9 @@ public class PaymentController {
         Paiement paiement = servPaiement.getPaiementById(id);
         if (paiement == null) {
             attributes.addFlashAttribute("error", "Paiement introuvable.");
-            return "redirect:/gharnata/list-clients";
+            return "redirect:/clients";
         }
-        String retour = "redirect:/gharnata/paiements/" + paiement.getClient().getId();
+        String retour = "redirect:/payments/" + paiement.getClient().getId();
 
         if (paiement.getFacture() != null) {
             attributes.addFlashAttribute("error", "Une facture existe déjà pour ce paiement.");
