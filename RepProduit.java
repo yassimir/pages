@@ -80,6 +80,24 @@ public interface RepProduit extends JpaRepository<Produit, Long> {
             Pageable pageable
     );
 
+    @Query(
+            value = """
+        SELECT p
+        FROM Produit p
+        WHERE p.categorie.id = :categorieId
+        ORDER BY p.id DESC
+        """,
+            countQuery = """
+        SELECT COUNT(p)
+        FROM Produit p
+        WHERE p.categorie.id = :categorieId
+        """
+    )
+    Page<Produit> findByCategorieIdPage(
+            @Param("categorieId") Integer categorieId,
+            Pageable pageable
+    );
+
     /*
     @Query(
             value = """
