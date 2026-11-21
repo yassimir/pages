@@ -17,6 +17,7 @@ public interface RepParametre extends JpaRepository<Parametre, Long> {
     // Vérifier si une clé existe
     boolean existsByCle(String cle);
 
+
     // Récupérer les paramètres d'une catégorie
     List<Parametre> findByCategorie(String categorie);
 
