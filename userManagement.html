@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="fr"
+      xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layouts/main :: layout(
+          ~{::content},
+          ~{::modals},
+          ${breadcrumbs},
+          'Gharnata | Gestion des utilisateurs',
+          ~{::pageCss},
+          ~{::pageJs}
+      )}">
+
+    <head>
+        <th:block th:fragment="pageCss">
+
+            <meta name="description" content="Gestion des utilisateurs Gharnata">
+            <style>
+                :root {
+                    --ink: #172033;
+                    --muted: #7e889d;
+                    --line: #e8ebf2;
+                    --surface: #fff;
+                    --canvas: #f5f7fb;
+                    --navy: #1c2742;
+                    --blue: #3977f6;
+                    --blue-soft: #edf3ff;
+                    --green: #16a37a;
+                    --green-soft: #e9faf4;
+                    --red: #e45f68;
+                    --red-soft: #fff0f1;
+                    --orange: #f59e0b;
+                    --shadow: 0 16px 40px rgba(35, 49, 85, .08)
+                }
+
+                * {
+                    box-sizing: border-box
+                }
+
+                body {
+                    margin: 0;
+                    background: var(--canvas);
+                    color: var(--ink);
+                    font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                    font-size: 14px
+                }
+
+                a {
+                    color: inherit;
+                    text-decoration: none
+                }
+
+                a:hover {
+                    text-decoration: none
+                }
+
+                .app-shell {
+                    min-height: 100vh;
+                    display: flex
+                }
+
+                .sidebar {
+                    width: 260px;
+                    flex: 0 0 260px;
+                    min-height: 100vh;
+                    background: var(--navy);
+                    color: #aeb9d0;
+                    padding: 22px 14px;
+                    position: fixed;
+                    z-index: 20;
+                    left: 0;
+                    top: 0;
+                    bottom: 0;
+                    transition: transform .25s ease
+                }
+
+                .menu-label {
+                    padding: 0 14px;
+                    color: #6f7e9f;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: 1.3px;
+                    margin: 19px 0 9px;
+                    font-weight: 700
+                }
+
+                .nav-list {
+                    list-style: none;
+                    padding: 0;
+                    margin: 0
+                }
+
+                .nav-list li {
+                    margin: 3px 0
+                }
+
+                .nav-list > li > a, .nav-list .submenu a {
+                    display: flex;
+                    align-items: center;
+                    min-height: 45px;
+                    border-radius: 10px;
+                    padding: 0 14px;
+                    transition: all .2s
+                }
+
+                .nav-list > li > a:hover, .nav-list .submenu a:hover {
+                    background: rgba(255, 255, 255, .07);
+                    color: #fff
+                }
+
+                .nav-list > li > a i {
+                    width: 27px;
+                    color: #8493b2;
+                    font-size: 16px
+                }
+
+                .nav-list > li.active > a {
+                    background: linear-gradient(90deg, rgba(57, 119, 246, .25), rgba(57, 119, 246, .08));
+                    color: #fff;
+                    box-shadow: inset 3px 0 var(--blue)
+                }
+
+                .nav-list > li.active > a i {
+                    color: #73a0ff
+                }
+
+                .chevron {
+                    margin-left: auto !important;
+                    width: auto !important;
+                    font-size: 11px !important;
+                    color: #7483a2 !important
+                }
+
+                .submenu {
+                    list-style: none;
+                    margin: 2px 0 7px 27px;
+                    padding: 0 0 0 12px;
+                    border-left: 1px solid #34415e
+                }
+
+                .submenu a {
+                    min-height: 35px !important;
+                    font-size: 12px;
+                    padding: 0 10px !important
+                }
+
+                .sidebar-bottom {
+                    position: absolute;
+                    left: 14px;
+                    right: 14px;
+                    bottom: 20px;
+                    border-top: 1px solid rgba(255, 255, 255, .08);
+                    padding: 17px 12px 0;
+                    color: #8492b0;
+                    font-size: 11px
+                }
+
+                .sidebar-bottom i {
+                    color: #63c99f;
+                    margin-right: 7px
+                }
+
+                .main {
+                    margin-left: 260px;
+                    width: calc(100% - 260px);
+                    min-width: 0
+                }
+
+                .topbar {
+                    height: 76px;
+                    background: rgba(255, 255, 255, .92);
+                    border-bottom: 1px solid var(--line);
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    padding: 0 4.2%;
+                    position: sticky;
+                    top: 0;
+                    z-index: 10;
+                    backdrop-filter: blur(14px)
+                }
+
+                .mobile-toggle {
+                    border: 0;
+                    background: transparent;
+                    color: var(--ink);
+                    font-size: 21px;
+                    display: none
+                }
+
+                .crumbs {
+                    color: var(--muted);
+                    font-size: 13px
+                }
+
+                .crumbs i {
+                    margin: 0 10px;
+                    font-size: 10px
+                }
+
+                .crumbs strong {
+                    color: var(--ink);
+                    font-weight: 600
+                }
+
+                .top-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 19px
+                }
+
+                .icon-btn {
+                    position: relative;
+                    color: #77839a;
+                    font-size: 18px
+                }
+
+                .notification {
+                    position: absolute;
+                    width: 7px;
+                    height: 7px;
+                    border-radius: 50%;
+                    background: var(--red);
+                    top: 0;
+                    right: -3px;
+                    border: 2px solid #fff;
+                    box-sizing: content-box
+                }
+
+                .profile {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    border-left: 1px solid var(--line);
+                    padding-left: 18px
+                }
+
+                .profile img {
+                    width: 35px;
+                    height: 35px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                    background: #e9eef9
+                }
+
+                .profile-name {
+                    font-size: 13px;
+                    font-weight: 600;
+                    color: var(--ink)
+                }
+
+                .profile-role {
+                    display: block;
+                    color: var(--muted);
+                    font-size: 11px;
+                    margin-top: 2px
+                }
+
+                .page {
+                    padding: 38px 4.2% 32px;
+                    max-width: 1500px
+                }
+
+                .page-heading {
+                    display: flex;
+                    align-items: flex-start;
+                    justify-content: space-between;
+                    margin-bottom: 27px
+                }
+
+                .eyebrow {
+                    color: var(--blue);
+                    font-size: 11px;
+                    font-weight: 800;
+                    text-transform: uppercase;
+                    letter-spacing: 1.5px;
+                    margin: 0 0 9px
+                }
+
+                h1 {
+                    font-size: 28px;
+                    margin: 0;
+                    letter-spacing: -.7px;
+                    font-weight: 750
+                }
+
+                .subtitle {
+                    margin: 8px 0 0;
+                    color: var(--muted);
+                    font-size: 14px
+                }
+
+                .add-btn {
+                    height: 43px;
+                    border: 0;
+                    border-radius: 9px;
+                    background: var(--blue);
+                    color: #fff;
+                    padding: 0 16px;
+                    font-size: 11px;
+                    font-weight: 700;
+                    box-shadow: 0 7px 15px rgba(57, 119, 246, .2)
+                }
+
+                .add-btn i {
+                    margin-right: 7px
+                }
+
+                .stats {
+                    display: grid;
+                    grid-template-columns:repeat(3, 1fr);
+                    gap: 15px;
+                    margin-bottom: 22px
+                }
+
+                .stat-card {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 14px;
+                    padding: 17px 19px;
+                    box-shadow: var(--shadow);
+                    display: flex;
+                    align-items: center;
+                    gap: 13px
+                }
+
+                .stat-icon {
+                    width: 38px;
+                    height: 38px;
+                    border-radius: 10px;
+                    display: grid;
+                    place-items: center;
+                    font-size: 16px
+                }
+
+                .stat-icon.blue {
+                    background: var(--blue-soft);
+                    color: var(--blue)
+                }
+
+                .stat-icon.green {
+                    background: var(--green-soft);
+                    color: var(--green)
+                }
+
+                .stat-icon.orange {
+                    background: #fff5df;
+                    color: var(--orange)
+                }
+
+                .stat-label {
+                    color: var(--muted);
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: .7px;
+                    font-weight: 800
+                }
+
+                .stat-value {
+                    display: block;
+                    color: var(--ink);
+                    font-size: 20px;
+                    font-weight: 800;
+                    margin-top: 3px
+                }
+
+                .users-card {
+                    background: var(--surface);
+                    border: 1px solid var(--line);
+                    border-radius: 16px;
+                    box-shadow: var(--shadow);
+                    padding: 25px 24px 22px
+                }
+
+                .card-head {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 19px
+                }
+
+                .card-head h2 {
+                    font-size: 17px;
+                    margin: 0;
+                    font-weight: 700
+                }
+
+                .search-box {
+                    height: 39px;
+                    width: 220px;
+                    border: 1px solid var(--line);
+                    border-radius: 8px;
+                    padding: 0 12px;
+                    font-size: 12px;
+                    outline: none;
+                    background: #fbfcfe
+                }
+
+                .search-box:focus {
+                    border-color: #7ea5fc
+                }
+
+                .table-wrap {
+                    overflow-x: auto;
+                    border: 1px solid var(--line);
+                    border-radius: 12px
+                }
+
+                .users-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    min-width: 760px
+                }
+
+                .users-table thead {
+                    background: #f8f9fc
+                }
+
+                .users-table th {
+                    color: #7a859a;
+                    font-size: 10px;
+                    text-transform: uppercase;
+                    letter-spacing: .7px;
+                    font-weight: 800;
+                    padding: 14px 15px;
+                    text-align: left;
+                    border-bottom: 1px solid var(--line)
+                }
+
+                .users-table td {
+                    padding: 14px 15px;
+                    color: #58657c;
+                    font-size: 12px;
+                    border-bottom: 1px solid var(--line);
+                    vertical-align: middle
+                }
+
+                .users-table tbody tr:last-child td {
+                    border-bottom: 0
+                }
+
+                .users-table tbody tr:hover {
+                    background: #fbfcff
+                }
+
+                .user-cell {
+                    display: flex;
+                    align-items: center;
+                    gap: 10px
+                }
+
+                .avatar {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 50%;
+                    display: grid;
+                    place-items: center;
+                    background: var(--blue-soft);
+                    color: var(--blue);
+                    font-weight: 800;
+                    font-size: 12px
+                }
+
+                .username {
+                    color: var(--ink);
+                    font-weight: 750
+                }
+
+                .email {
+                    color: var(--muted);
+                    font-size: 11px;
+                    margin-top: 3px
+                }
+
+                .role-badge, .state-badge {
+                    display: inline-block;
+                    border-radius: 20px;
+                    padding: 6px 10px;
+                    font-size: 10px;
+                    font-weight: 800
+                }
+
+                .role-badge.admin {
+                    background: #eeeaff;
+                    color: #6551bb
+                }
+
+                .role-badge.manager {
+                    background: var(--blue-soft);
+                    color: var(--blue)
+                }
+
+                .role-badge.user {
+                    background: #f1f3f7;
+                    color: #69758d
+                }
+
+                .state-badge.active {
+                    background: var(--green-soft);
+                    color: #14795d
+                }
+
+                .state-badge.inactive {
+                    background: var(--red-soft);
+                    color: #b24653
+                }
+
+                .action-btn {
+                    width: 31px;
+                    height: 31px;
+                    border: 0;
+                    border-radius: 7px;
+                    margin-right: 5px
+                }
+
+                .edit-btn {
+                    background: var(--blue-soft);
+                    color: var(--blue)
+                }
+
+                .delete-btn {
+                    background: var(--red-soft);
+                    color: var(--red)
+                }
+
+                .action-btn:hover {
+                    filter: brightness(.95)
+                }
+
+                .empty-state {
+                    padding: 45px 20px;
+                    text-align: center;
+                    color: var(--muted)
+                }
+
+                .empty-state i {
+                    font-size: 38px;
+                    color: #c9d5eb;
+                    margin-bottom: 13px
+                }
+
+                .empty-state h3 {
+                    color: #4d5a72;
+                    font-size: 16px;
+                    margin: 0 0 7px
+                }
+
+                .empty-state p {
+                    font-size: 12px;
+                    margin: 0
+                }
+
+                .footer {
+                    color: #a2aabd;
+                    font-size: 11px;
+                    text-align: center;
+                    padding: 32px 0 4px
+                }
+
+                .modal-content {
+                    border: 0;
+                    border-radius: 16px;
+                    box-shadow: var(--shadow)
+                }
+
+                .modal-header, .modal-footer {
+                    border-color: var(--line);
+                    padding: 18px 22px
+                }
+
+                .modal-title {
+                    font-size: 17px;
+                    font-weight: 700
+                }
+
+                .modal-body {
+                    padding: 22px
+                }
+
+                .modal .close {
+                    font-size: 24px;
+                    font-weight: 400;
+                    color: #9ba5b8
+                }
+
+                .field {
+                    margin-bottom: 16px
+                }
+
+                .field-label {
+                    display: block;
+                    color: #46526b;
+                    font-size: 11px;
+                    font-weight: 750;
+                    margin: 0 0 8px
+                }
+
+                .required {
+                    color: var(--red)
+                }
+
+                .control {
+                    width: 100%;
+                    height: 46px;
+                    border: 1px solid #dfe4ee;
+                    border-radius: 9px;
+                    color: var(--ink);
+                    background: #fbfcfe;
+                    padding: 0 14px;
+                    outline: none;
+                    font-size: 13px
+                }
+
+                .control:focus {
+                    border-color: #7ea5fc;
+                    box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
+                    background: #fff
+                }
+
+                .modal-grid {
+                    display: grid;
+                    grid-template-columns:1fr 1fr;
+                    gap: 0 15px
+                }
+
+                .alert {
+                    border: 0;
+                    border-radius: 11px;
+                    padding: 13px 16px;
+                    margin-bottom: 18px;
+                    font-size: 12px
+                }
+
+                .alert-danger {
+                    background: var(--red-soft);
+                    color: #a23e4b
+                }
+
+                .alert-success {
+                    background: var(--green-soft);
+                    color: #14795d
+                }
+
+                @media (max-width: 900px) {
+                    .stats {
+                        grid-template-columns:1fr 1fr
+                    }
+
+                    .stat-card:last-child {
+                        grid-column: 1/-1
+                    }
+                }
+
+                @media (max-width: 780px) {
+                    .sidebar {
+                        transform: translateX(-100%);
+                        box-shadow: 10px 0 30px rgba(0, 0, 0, .15)
+                    }
+
+                    .sidebar.open {
+                        transform: translateX(0)
+                    }
+
+                    .main {
+                        margin-left: 0;
+                        width: 100%
+                    }
+
+                    .mobile-toggle {
+                        display: block;
+                        margin-right: 14px
+                    }
+
+                    .topbar {
+                        padding: 0 20px
+                    }
+
+                    .crumbs {
+                        display: none
+                    }
+
+                    .page {
+                        padding: 28px 18px
+                    }
+
+                    .page-heading {
+                        display: block
+                    }
+
+                    .add-btn {
+                        margin-top: 18px
+                    }
+
+                    .users-card {
+                        padding: 21px 17px
+                    }
+
+                    .card-head {
+                        display: block
+                    }
+
+                    .search-box {
+                        width: 100%;
+                        margin-top: 14px
+                    }
+                }
+
+                @media (max-width: 560px) {
+                    h1 {
+                        font-size: 24px
+                    }
+
+                    .profile-name, .profile-role {
+                        display: none
+                    }
+
+                    .profile {
+                        padding-left: 10px
+                    }
+
+                    .stats {
+                        grid-template-columns:1fr
+                    }
+
+                    .stat-card:last-child {
+                        grid-column: auto
+                    }
+
+                    .modal-grid {
+                        grid-template-columns:1fr
+                    }
+                }
+            </style>
+        </th:block>
+    </head>
+    <body>
+        <th:block th:fragment="content">
+            <section class="page">
+                <div class="page-heading">
+                    <div><p class="eyebrow">Administration</p>
+                        <h1>Gestion des utilisateurs</h1>
+                        <p class="subtitle">Gérez les comptes, les rôles et les accès à votre application.</p></div>
+                    <button class="add-btn" type="button" data-toggle="modal" data-target="#userModal"
+                            onclick="prepareAdd()"><i class="fa fa-plus"></i> Ajouter un utilisateur
+                    </button>
+                </div>
+                <div th:if="${error}" class="alert alert-danger" role="alert"><i
+                        class="fa fa-exclamation-circle mr-2"></i><span th:text="${error}"></span></div>
+                <div th:if="${success}" class="alert alert-success" role="alert"><i
+                        class="fa fa-check-circle mr-2"></i><span th:text="${success}"></span></div>
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-icon blue"><i class="fa fa-users"></i></div>
+                        <div><span class="stat-label">Total utilisateurs</span><strong class="stat-value"
+                                                                                       th:text="${users != null ? #lists.size(users) : 0}">0</strong>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green"><i class="fa fa-check-circle"></i></div>
+                        <div><span class="stat-label">Comptes actifs</span><strong class="stat-value"
+                                                                                   th:text="${activeUsers != null ? activeUsers : 0}">0</strong>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon orange"><i class="fa fa-shield"></i></div>
+                        <div><span class="stat-label">Administrateurs</span><strong class="stat-value"
+                                                                                    th:text="${adminUsers != null ? adminUsers : 0}">0</strong>
+                        </div>
+                    </div>
+                </div>
+                <div class="users-card">
+                    <div class="card-head"><h2><i class="fa fa-list" style="color:var(--blue);margin-right:7px"></i> Liste
+                        des utilisateurs</h2><input class="search-box" type="search" id="userSearch"
+                                                    placeholder="Rechercher un utilisateur..."></div>
+                    <div class="table-wrap">
+                        <table class="users-table" id="usersTable">
+                            <thead>
+                            <tr>
+                                <th>Utilisateur</th>
+                                <th>Email</th>
+                                <th>Rôle</th>
+                                <th>État</th>
+                                <th>Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <th:block th:each="user : ${users}">
+                                <tr>
+                                    <td>
+                                        <div class="user-cell"><span class="avatar"
+                                                                     th:text="${#strings.substring(user.username,0,1).toUpperCase()}">U</span><span
+                                                class="username" th:text="${user.username}"></span></div>
+                                    </td>
+                                    <td class="email" th:text="${user.email}"></td>
+                                    <td><span class="role-badge admin"
+                                              th:if="${user.role == 'ADMIN' or user.role == 'ROLE_ADMIN'}">Administrateur</span><span
+                                            class="role-badge manager"
+                                            th:if="${user.role == 'MANAGER' or user.role == 'ROLE_MANAGER'}">Gestionnaire</span><span
+                                            class="role-badge user"
+                                            th:if="${user.role != 'ADMIN' and user.role != 'ROLE_ADMIN' and user.role != 'MANAGER' and user.role != 'ROLE_MANAGER'}"
+                                            th:text="${user.role}">Utilisateur</span></td>
+                                    <td><span class="state-badge active"
+                                              th:if="${user.enabled == true or user.active == true}">Actif</span><span
+                                            class="state-badge inactive"
+                                            th:if="${user.enabled != true and user.active != true}">Inactif</span></td>
+                                    <td>
+                                        <button class="action-btn edit-btn" type="button" data-toggle="modal"
+                                                data-target="#userModal"
+                                                th:attr="data-id=${user.id},data-username=${user.username},data-email=${user.email},data-role=${user.role},data-enabled=${user.enabled}"
+                                                onclick="prepareEdit(this)" title="Modifier"><i class="fa fa-pencil"></i>
+                                        </button>
+                                        <a class="action-btn delete-btn d-inline-grid place-items-center"
+                                           th:href="@{/gharnata/users/delete/{id}(id=${user.id})}"
+                                           onclick="return confirm('Voulez-vous vraiment supprimer cet utilisateur ?');"
+                                           title="Supprimer"><i class="fa fa-trash"></i></a></td>
+                                </tr>
+                            </th:block>
+                            <tr th:if="${users == null or #lists.isEmpty(users)}">
+                                <td colspan="5">
+                                    <div class="empty-state"><i class="fa fa-users"></i>
+                                        <h3>Aucun utilisateur</h3>
+                                        <p>Ajoutez un premier compte pour commencer.</p></div>
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <form th:action="@{/gharnata/users/migration-images}" method="post"
+                      onsubmit="return confirm('Lancer la migration des anciennes images ?')">
+
+                    <button type="submit" class="btn btn-warning">
+                        Migrer les anciennes images
+                    </button>
+
+                </form>
+                <footer class="footer">© 2026 Gharnata · Gestion de stock</footer>
+            </section>
+        </th:block>
+        <th:block th:fragment="modals">
+            <div class="modal fade" id="userModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-header"><h4 class="modal-title" id="userModalTitle">Ajouter un utilisateur</h4>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <form method="post" id="userForm" th:action="@{/users/add}">
+                            <div class="modal-body"><input type="hidden" id="userId" name="id">
+                                <div class="modal-grid">
+                                    <div class="field"><label class="field-label" for="username">Nom d'utilisateur <span
+                                            class="required">*</span></label><input class="control" type="text" id="username"
+                                                                                    name="username" required></div>
+                                    <div class="field"><label class="field-label" for="email">Email <span class="required">*</span></label><input
+                                            class="control" type="email" id="email" name="email" required></div>
+                                </div>
+                                <div class="field"><label class="field-label" for="password">Mot de passe <span class="required"
+                                                                                                                id="passwordRequired">*</span></label><input
+                                        class="control" type="password" id="password" name="password" minlength="6"><small
+                                        class="text-muted" id="passwordHelp">Minimum 6 caractères.</small></div>
+                                <div class="modal-grid">
+                                    <div class="field"><label class="field-label" for="role">Rôle <span
+                                            class="required">*</span></label><select class="control" id="role" name="role" required>
+                                        <option value="USER">Utilisateur</option>
+                                        <option value="MANAGER">Gestionnaire</option>
+                                        <option value="ADMIN">Administrateur</option>
+                                    </select></div>
+                                    <div class="field"><label class="field-label" for="enabled">État du compte</label><select
+                                            class="control" id="enabled" name="enabled">
+                                        <option value="true">Actif</option>
+                                        <option value="false">Inactif</option>
+                                    </select></div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-light" data-dismiss="modal">Annuler</button>
+                                <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> <span id="submitLabel">Créer l'utilisateur</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </th:block>
+        <th:block th:fragment="pageJs">
+            <script>
+                (function () {
+                    var sidebar = document.getElementById('sidebar'), toggle = document.getElementById('sidebarToggle');
+                    if (toggle) toggle.addEventListener('click', function () {
+                        sidebar.classList.toggle('open')
+                    });
+                    document.addEventListener('click', function (e) {
+                        if (window.innerWidth <= 780 && sidebar.classList.contains('open') && !sidebar.contains(e.target) && e.target !== toggle && !toggle.contains(e.target)) sidebar.classList.remove('open')
+                    });
+                    var search = document.getElementById('userSearch');
+                    if (search) search.addEventListener('input', function () {
+                        var q = search.value.toLowerCase();
+                        document.querySelectorAll('#usersTable tbody tr').forEach(function (row) {
+                            row.style.display = row.textContent.toLowerCase().indexOf(q) > -1 ? '' : 'none'
+                        })
+                    });
+                    window.prepareAdd = function () {
+                        document.getElementById('userModalTitle').textContent = 'Ajouter un utilisateur';
+                        document.getElementById('submitLabel').textContent = "Créer l'utilisateur";
+                        document.getElementById('userForm').action = '/gharnata/users/add';
+                        document.getElementById('userId').value = '';
+                        document.getElementById('username').value = '';
+                        document.getElementById('email').value = '';
+                        document.getElementById('password').value = '';
+                        document.getElementById('password').required = true;
+                        document.getElementById('passwordRequired').style.display = 'inline';
+                        document.getElementById('passwordHelp').textContent = 'Minimum 6 caractères.';
+                        document.getElementById('role').value = 'USER';
+                        document.getElementById('enabled').value = 'true'
+                    };
+                    window.prepareEdit = function (btn) {
+                        document.getElementById('userModalTitle').textContent = 'Modifier un utilisateur';
+                        document.getElementById('submitLabel').textContent = 'Enregistrer les modifications';
+                        document.getElementById('userForm').action = '/gharnata/users/update';
+                        document.getElementById('userId').value = btn.dataset.id || '';
+                        document.getElementById('username').value = btn.dataset.username || '';
+                        document.getElementById('email').value = btn.dataset.email || '';
+                        document.getElementById('password').value = '';
+                        document.getElementById('password').required = false;
+                        document.getElementById('passwordRequired').style.display = 'none';
+                        document.getElementById('passwordHelp').textContent = 'Laissez vide pour conserver le mot de passe actuel.';
+                        document.getElementById('role').value = btn.dataset.role || 'USER';
+                        document.getElementById('enabled').value = btn.dataset.enabled === 'false' ? 'false' : 'true'
+                    }
+                }());
+            </script>
+        </th:block>
+    </body>
+</html>
