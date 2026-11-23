@@ -771,15 +771,22 @@
             <div class="stats">
                 <div class="stat-card">
                     <div class="stat-icon green"><i class="fa fa-money"></i></div>
-                    <div><span class="stat-label">Reçus ce mois</span><strong class="stat-value"
-                                                                              th:text="${currentMonthTotal != null ? currentMonthTotal : '0,00 DH'}">0,00
-                        DH</strong><span class="stat-note">Paiements confirmés</span></div>
+                    <div><span class="stat-label">Reçus ce mois</span>
+                        <strong class="stat-value" th:text="${currentMonthTotal != null ? currentMonthTotal + ' DH' : '0,00 DH'}">
+                            0,00 DH
+                        </strong>
+                        <span class="stat-note">Paiements confirmés</span>
+                    </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon orange"><i class="fa fa-clock-o"></i></div>
-                    <div><span class="stat-label">Paiements à confirmer</span><strong class="stat-value"
-                                                                                      th:text="${pendingPayments != null ? pendingPayments : '0,00 DH'}">0,00
-                        DH</strong><span class="stat-note">À vérifier</span></div>
+                    <div>
+                        <span class="stat-label">Paiements à confirmer</span>
+                        <strong class="stat-value" th:text="${pendingPayments != null ? pendingPayments + ' DH' : '0,00 DH'}">
+                            0,00 DH
+                        </strong>
+                        <span class="stat-note">À vérifier</span>
+                    </div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-icon red"><i class="fa fa-warning"></i></div>
@@ -810,7 +817,7 @@
                     </h2><a class="panel-link" th:href="@{/payments}">Voir tout <i
                             class="fa fa-arrow-right"></i></a></div>
                     <div th:if="${payments != null and !#lists.isEmpty(payments)}">
-                        <div class="payment-row" th:each="payment,stat : ${payments}" th:if="${stat.index < 5}">
+                        <!--<div class="payment-row" th:each="payment,stat : ${payments}" th:if="${stat.index < 5}">
                             <div class="payment-icon"><i class="fa fa-check"></i></div>
                             <div class="row-main"><span class="row-title"
                                                         th:text="${payment.client != null ? payment.client.ste : 'Client non renseigné'}">Client</span><span
@@ -820,7 +827,40 @@
                             </div>
                             <span class="row-amount"
                                   th:text="${payment.montant != null ? payment.montant + ' DH' : '0 DH'}">0 DH</span><span
-                                class="row-status status-green">Reçu</span></div>
+                                class="row-status status-green">Reçu</span></div>-->
+                        <div class="payment-row" th:each="payment : ${payments}">
+                            <div class="payment-icon">
+                                <i class="fa fa-money"></i>
+                            </div>
+
+                            <div class="row-main">
+                                <span class="row-title"
+                                      th:text="${payment.client != null ? payment.client.ste : 'Client non renseigné'}">
+                                    Client
+                                </span>
+
+                                <span class="row-meta">
+                                    <span th:text="${payment.datePay != null ? payment.datePay : '-'}">
+                                        Date
+                                    </span>
+                                    ·
+                                    <span th:text="${payment.modPai != null ? payment.modPai : '-'}">
+                                        Méthode
+                                    </span>
+                                </span>
+                            </div>
+
+                            <span class="row-amount"
+                                  th:text="${payment.montant != null ? payment.montant + ' DH' : '0 DH'}">
+                                0 DH
+                            </span>
+
+                            <span class="row-status"
+                                  th:classappend="${payment.confirmed ? ' status-green' : ' status-orange'}"
+                                  th:text="${payment.confirmed ? 'Confirmé' : 'À confirmer'}">
+                                Statut
+                            </span>
+                        </div>
                     </div>
                     <div class="empty-mini" th:if="${payments == null or #lists.isEmpty(payments)}"><i
                             class="fa fa-money"></i>Aucun paiement récent
@@ -856,19 +896,34 @@
                     <a class="panel-link" th:href="@{/commands}">Voir les commandes <i
                             class="fa fa-arrow-right"></i></a></div>
                 <div th:if="${pendingOrders != null and !#lists.isEmpty(pendingOrders)}">
-                    <div class="order-row" th:each="order,stat : ${pendingOrders}" th:if="${stat.index < 5}">
-                        <div class="order-icon"><i class="fa fa-hourglass-half"></i></div>
-                        <div class="row-main"><span class="row-title"
-                                                    th:text="${order.client != null ? order.client.ste : 'Commande'}">Commande</span><span
-                                class="row-meta"><span
-                                th:text="${order.reference != null ? order.reference : 'Référence non renseignée'}">CMD-000</span> · <span
-                                th:text="${order.date != null ? order.date : '-'}">Date</span></span></div>
+                    <div class="order-row" th:each="order : ${pendingOrders}">
+                        <div class="order-icon">
+                            <i class="fa fa-shopping-cart"></i>
+                        </div>
+
+                        <div class="row-main">
+            <span class="row-title"
+                  th:text="${'Commande #' + order.id}">
+                Commande
+            </span>
+
+                            <span class="row-meta"
+                                  th:text="${order.client != null ? order.client.ste : 'Client non renseigné'}">
+                Client
+            </span>
+                        </div>
+
                         <span class="row-amount"
-                              th:text="${order.montant != null ? order.montant + ' DH' : '-'}">-</span><span
-                            class="row-status status-orange">À confirmer</span></div>
+                              th:text="${order.montantHT != null ? order.montantHT + ' DH' : '0 DH'}">
+            0 DH
+        </span>
+                    </div>
                 </div>
-                <div class="empty-mini" th:if="${pendingOrders == null or #lists.isEmpty(pendingOrders)}"><i
-                        class="fa fa-check-circle"></i>Aucune commande en attente
+
+                <div class="empty-mini"
+                     th:if="${pendingOrders == null or #lists.isEmpty(pendingOrders)}">
+                    <i class="fa fa-check-circle"></i>
+                    Aucune commande à confirmer
                 </div>
             </div>
             <div class="panel">
