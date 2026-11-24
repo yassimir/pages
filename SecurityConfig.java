@@ -45,6 +45,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/resources/**", "/assets/**", "/images/**", "/icons/**", "/login", "/service-worker.js", "/manifest.json").permitAll()
                         .requestMatchers("/users/**").hasRole("ADMIN")
+                        .requestMatchers("/settings/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/payments/*/confirm").hasRole("ADMIN")
                         .requestMatchers("/notifications-paiement/**").hasRole("ADMIN")
                         .requestMatchers("/clients/**","/commands/**", "/factures/**", "/notif-stock/**",
