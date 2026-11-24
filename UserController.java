@@ -2,6 +2,7 @@ package com.gharnata.controller;
 
 
 
+import com.gharnata.enums.Role;
 import com.gharnata.service.ServNotification;
 import com.gharnata.service.ServProduit;
 import org.springframework.stereotype.Controller;
@@ -29,6 +30,8 @@ public class UserController {
     public String users(Model model){
         model.addAttribute("notif",servNotification.nbNotif());
         model.addAttribute("cats", this.servProduit.getAllCats());
+
+        model.addAttribute("roles", Role.values());
         model.addAttribute("breadcrumbs", List.of(
                 "Administration",
                 "Utilisateurs"

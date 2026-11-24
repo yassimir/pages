@@ -24,6 +24,9 @@ public class Utilisateur {
 
     private String nom;
 
+    @Column(unique = true)
+    private String email;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
@@ -126,5 +129,13 @@ public class Utilisateur {
 
     public void setFactures(List<Facture> factures) {
         this.factures = factures;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }
