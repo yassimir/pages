@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Connexion à l'espace privé Gharnata">
+    <title>Gharnata | Connexion</title>
+    <link rel="icon" href="/assets/images/logo/logo_icon.png" type="image/png">
+    <link rel="stylesheet" href="/assets/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/assets/css/font-awesome.min.css">
+    <style>
+        :root {
+            --ink: #172033;
+            --muted: #7e889d;
+            --line: #e8ebf2;
+            --navy: #1c2742;
+            --blue: #3977f6;
+            --blue-dark: #2b61d0;
+            --blue-soft: #edf3ff;
+            --green: #16a37a;
+            --red: #e45f68;
+            --shadow: 0 24px 65px rgba(25, 40, 76, .17)
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #f5f7fb;
+            color: var(--ink);
+            font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif
+        }
+
+        .login-shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns:minmax(370px, .82fr) minmax(480px, 1.18fr);
+            overflow: hidden
+        }
+
+        .visual-panel {
+            background: var(--navy);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 55px;
+            overflow: hidden
+        }
+
+        .visual-panel:before, .visual-panel:after {
+            content: "";
+            position: absolute;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, .1)
+        }
+
+        .visual-panel:before {
+            width: 520px;
+            height: 520px;
+            right: -220px;
+            top: -150px
+        }
+
+        .visual-panel:after {
+            width: 420px;
+            height: 420px;
+            left: -240px;
+            bottom: -190px
+        }
+
+        .glow {
+            position: absolute;
+            width: 280px;
+            height: 280px;
+            border-radius: 50%;
+            background: rgba(57, 119, 246, .23);
+            filter: blur(5px);
+            top: 28%;
+            left: 27%
+        }
+
+        .visual-content {
+            position: relative;
+            z-index: 1;
+            max-width: 410px;
+            color: #fff
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 70px
+        }
+
+        /*.brand a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 49px;
+            height: 49px;
+            margin-right: 11px;
+            flex-shrink: 0;
+        }
+
+        .brand strong {
+            display: block;
+            font-size: 19px;
+            line-height: 1.1
+        }
+
+        .brand small {
+            color: #aeb9d0;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px
+        }
+
+        .brand img {
+            width: 48px;
+            height: 48px;
+            background: #fff;
+            border-radius: 8px;
+            padding: 3px;
+            object-fit: contain
+        }*/
+
+        .brand a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 54px;
+            height: 54px;
+            margin-right: 11px;
+            flex: 0 0 54px;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        .brand img {
+            display: block;
+            width: 48px;
+            height: 48px;
+            max-width: none;
+            object-fit: contain;
+            padding: 3px;
+            margin: 0;
+            background: #fff;
+            border-radius: 13px;
+            box-sizing: border-box;
+        }
+
+        .brand strong {
+            display: block;
+            font-size: 19px;
+            line-height: 1.1;
+        }
+
+        .brand small {
+            color: #aeb9d0;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .visual-content h1 {
+            font-size: 43px;
+            line-height: 1.12;
+            letter-spacing: -1.3px;
+            margin: 0 0 18px
+        }
+
+        .visual-content h1 span {
+            color: #74a0ff
+        }
+
+        .visual-content p {
+            color: #b8c3d9;
+            font-size: 14px;
+            line-height: 1.8;
+            margin: 0
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+            margin: 38px 0 0
+        }
+
+        .feature-list li {
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            color: #dce4f2;
+            font-size: 12px;
+            margin: 16px 0
+        }
+
+        .feature-list i {
+            width: 25px;
+            height: 25px;
+            border-radius: 8px;
+            background: rgba(57, 119, 246, .25);
+            color: #76a2ff;
+            display: grid;
+            place-items: center
+        }
+
+        .copyright {
+            position: absolute;
+            left: 55px;
+            bottom: 28px;
+            color: #71809e;
+            font-size: 10px
+        }
+
+        .form-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 42px 8%;
+            background: #f7f8fb
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 450px;
+            background: #fff;
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            padding: 38px 40px;
+            box-shadow: var(--shadow)
+        }
+
+        .mobile-brand {
+            display: none
+        }
+
+        .eyebrow {
+            color: var(--blue);
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin: 0 0 9px
+        }
+
+        .login-card h2 {
+            font-size: 27px;
+            letter-spacing: -.7px;
+            margin: 0 0 9px;
+            font-weight: 750
+        }
+
+        .intro {
+            color: var(--muted);
+            font-size: 13px;
+            margin: 0 0 27px
+        }
+
+        .alert {
+            border: 0;
+            border-radius: 10px;
+            font-size: 12px;
+            padding: 12px 14px;
+            margin-bottom: 18px
+        }
+
+        .alert-danger {
+            background: #fff0f1;
+            color: #a23e4b
+        }
+
+        .alert-success {
+            background: #e9faf4;
+            color: #14795d
+        }
+
+        .field {
+            margin-bottom: 19px
+        }
+
+        .field-label {
+            display: block;
+            color: #46526b;
+            font-size: 11px;
+            font-weight: 750;
+            margin: 0 0 8px
+        }
+
+        .input-wrap {
+            position: relative
+        }
+
+        .input-wrap i.leading {
+            position: absolute;
+            left: 14px;
+            top: 15px;
+            color: #98a4b8;
+            font-size: 14px
+        }
+
+        .control {
+            width: 100%;
+            height: 49px;
+            border: 1px solid #dfe4ee;
+            border-radius: 9px;
+            background: #fbfcfe;
+            color: var(--ink);
+            font-size: 13px;
+            padding: 0 43px;
+            outline: none;
+            transition: .2s
+        }
+
+        .control:focus {
+            border-color: #7ea5fc;
+            box-shadow: 0 0 0 4px rgba(57, 119, 246, .1);
+            background: #fff
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 11px;
+            width: 28px;
+            height: 28px;
+            border: 0;
+            background: transparent;
+            color: #94a0b4
+        }
+
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 3px 0 25px
+        }
+
+        .remember {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            color: var(--muted);
+            font-size: 11px
+        }
+
+        .remember input {
+            accent-color: var(--blue)
+        }
+
+        .forgot {
+            color: var(--blue);
+            font-size: 11px;
+            font-weight: 650
+        }
+
+        .login-btn {
+            width: 100%;
+            height: 49px;
+            border: 0;
+            border-radius: 9px;
+            background: var(--blue);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 750;
+            box-shadow: 0 9px 18px rgba(57, 119, 246, .22);
+            transition: .2s
+        }
+
+        .login-btn:hover {
+            background: var(--blue-dark);
+            transform: translateY(-1px)
+        }
+
+        .security-note {
+            text-align: center;
+            color: #a0aabd;
+            font-size: 10px;
+            margin: 24px 0 0
+        }
+
+        .security-note i {
+            color: var(--green);
+            margin-right: 5px
+        }
+
+        @media (max-width: 800px) {
+
+            .login-shell {
+                display: block
+            }
+
+            .visual-panel {
+                display: none
+            }
+
+            .form-panel {
+                min-height: 100vh;
+                padding: 25px 18px
+            }
+
+            .login-card {
+                max-width: 470px;
+                padding: 30px 24px
+            }
+
+            .mobile-brand {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 34px
+            }
+
+            .mobile-brand img {
+                width: 38px;
+                height: 38px;
+                background: #fff;
+                border-radius: 10px;
+                padding: 2px
+            }
+
+            .mobile-brand strong {
+                font-size: 16px
+            }
+
+            .mobile-brand small {
+                display: block;
+                color: var(--muted);
+                font-size: 9px;
+                letter-spacing: 1px;
+                text-transform: uppercase
+            }
+
+            .login-card h2 {
+                font-size: 25px
+            }
+        }
+    </style>
+
+    <!-- PWA -->
+    <link rel="manifest" th:href="@{/manifest.json}">
+
+    <meta name="theme-color" content="#0d6efd">
+
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Gestion de stock">
+
+    <link rel="apple-touch-icon"
+          th:href="@{/icons/icon-192.png}">
+</head>
+<body>
+<main class="login-shell">
+    <section class="visual-panel">
+        <div class="glow"></div>
+        <div class="visual-content">
+            <div class="brand">
+                <img src="/assets/images/logo/logo_icon.png" alt="Gharnata">
+                <div>
+                    <strong>Gharnata Stock</strong>
+                    <small>Contrôle total</small>
+                </div>
+            </div>
+            <h1>Bienvenue dans votre <span>espace privé.</span></h1
+            >
+            <p>Centralisez vos produits, clients, commandes et paiements dans une interface simple et maîtrisée.</p>
+            <ul class="feature-list">
+                <li><i class="fa fa-cubes"></i> Suivi précis de votre stock</li>
+                <li><i class="fa fa-users"></i> Gestion complète de vos clients</li>
+                <li><i class="fa fa-line-chart"></i> Pilotage de votre activité</li>
+            </ul>
+        </div>
+        <span class="copyright">© 2026 Gharnata · Gestion de stock</span></section>
+    <section class="form-panel">
+        <div class="login-card">
+            <div class="mobile-brand">
+                <img src="/assets/images/logo/logo_icon.png" alt="Gharnata">
+                <div>
+                    <strong>Gharnata Stock</strong>
+                    <small>Contrôle total</small>
+                </div>
+            </div>
+            <p class="eyebrow">Espace sécurisé</p>
+            <h2>Se connecter</h2>
+            <p class="intro">Accédez à votre tableau de bord de gestion.</p>
+            <div th:if="${param.error}" class="alert alert-danger" role="alert">
+                <i class="fa fa-exclamation-circle mr-2"></i>Nom d'utilisateur ou mot de passe invalide.
+            </div>
+            <div th:if="${param.logout}" class="alert alert-success" role="alert">
+                <i class="fa fa-check-circle mr-2"></i>Vous avez été déconnecté avec succès.
+            </div>
+            <div th:if="${param.expired}" class="alert alert-danger">
+                Votre session a été fermée car vous vous êtes connecté ailleurs.
+            </div>
+            <form th:action="@{/login}" method="post">
+                <div class="field">
+                    <label class="field-label" for="user">Nom d'utilisateur</label>
+                    <div class="input-wrap">
+                        <i class="fa fa-user leading"></i>
+                        <input class="control" type="text" name="username" id="user"
+                               placeholder="Votre nom d'utilisateur" required autofocus>
+                    </div>
+                </div>
+                <div class="field">
+                    <label class="field-label" for="password">Mot de passe</label>
+                    <div class="input-wrap">
+                        <i class="fa fa-lock leading"></i>
+                        <input class="control" type="password" name="password" id="password"
+                               placeholder="Votre mot de passe" required>
+                        <button type="button" class="toggle-password" id="togglePassword"
+                                aria-label="Afficher le mot de passe"><i class="fa fa-eye"></i></button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <label class="remember">
+                        <input type="checkbox" name="remember-me"> Se souvenir de moi</label>
+                    <a class="forgot" href="#" onclick="return false;">Mot de passe oublié ?</a>
+                </div>
+                <button class="login-btn" type="submit"><i class="fa fa-sign-in"></i> Se connecter</button>
+            </form>
+            <p class="security-note"><i class="fa fa-shield"></i> Connexion protégée et réservée aux utilisateurs
+                autorisés</p></div>
+    </section>
+</main>
+<script>var btn = document.getElementById('togglePassword'), pwd = document.getElementById('password');
+if (btn) btn.addEventListener('click', function () {
+    var visible = pwd.type === 'text';
+    pwd.type = visible ? 'password' : 'text';
+    btn.innerHTML = visible ? '<i class="fa fa-eye"></i>' : '<i class="fa fa-eye-slash"></i>'
+});</script>
+<script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("/service-worker.js")
+                .then(function (registration) {
+                    console.log(
+                        "Service Worker enregistré :",
+                        registration.scope
+                    );
+                })
+                .catch(function (error) {
+                    console.error(
+                        "Erreur Service Worker :",
+                        error
+                    );
+                });
+        });
+    }
+</script>
+
+</body>
+</html>
