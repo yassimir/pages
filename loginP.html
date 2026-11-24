@@ -488,8 +488,21 @@
             <p class="eyebrow">Espace sécurisé</p>
             <h2>Se connecter</h2>
             <p class="intro">Accédez à votre tableau de bord de gestion.</p>
-            <div th:if="${param.error}" class="alert alert-danger" role="alert">
+            <!--<div th:if="${param.error}" class="alert alert-danger" role="alert">
                 <i class="fa fa-exclamation-circle mr-2"></i>Nom d'utilisateur ou mot de passe invalide.
+            </div>-->
+            <!-- Compte désactivé -->
+            <div th:if="${param.error != null and param.error[0] == 'disabled'}"
+                 class="alert alert-warning" role="alert">
+                <i class="fa fa-exclamation-circle mr-2"></i>
+                Ce compte est désactivé. Veuillez contacter l'administrateur.
+            </div>
+
+            <!-- Identifiants incorrects -->
+            <div th:if="${param.error != null and param.error[0] == 'invalid'}"
+                 class="alert alert-danger" role="alert">
+                <i class="fa fa-exclamation-circle mr-2"></i>
+                Nom d'utilisateur ou mot de passe invalide.
             </div>
             <div th:if="${param.logout}" class="alert alert-success" role="alert">
                 <i class="fa fa-check-circle mr-2"></i>Vous avez été déconnecté avec succès.

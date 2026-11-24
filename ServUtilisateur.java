@@ -108,4 +108,68 @@ public class ServUtilisateur {
 
         utilisateurRepository.save(utilisateur);
     }
+
+    /**
+     * Modifie un utilisateur existant.
+     */
+    @Transactional
+    public void modifierUtilisateur(Long id,
+                                    String username,
+                                    String email,
+                                    String motDePasse,
+                                    Role role,
+                                    boolean actif) {
+
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Utilisateur introuvable."
+                ));
+
+        username = username == null ? "" : username.trim();
+        email = email == null ? "" : email.trim();
+        motDePasse = motDePasse == null ? "" : motDePasse;
+
+        if (username.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Le nom d'utilisateur est obligatoire."
+            );
+        }
+
+        if (role == null) {
+            throw new IllegalArgumentException(
+                    "Le rôle est obligatoire."
+            );
+        }
+
+        if (utilisateurRepository.existsByUsernameAndIdNot(username, id)) {
+            throw new IllegalArgumentException(
+                    "Ce nom d'utilisateur existe déjà."
+            );
+        }
+
+        if (!email.isBlank()
+                && utilisateurRepository.existsByEmailAndIdNot(email, id)) {
+            throw new IllegalArgumentException(
+                    "Cette adresse e-mail existe déjà."
+            );
+        }
+
+        if (!motDePasse.isBlank() && motDePasse.length() < 6) {
+            throw new IllegalArgumentException(
+                    "Le mot de passe doit contenir au moins 6 caractères."
+            );
+        }
+
+        utilisateur.setUsername(username);
+        utilisateur.setEmail(email.isBlank() ? null : email);
+        utilisateur.setRole(role);
+        utilisateur.setActif(actif);
+
+        // Modifier le mot de passe uniquement s'il a été renseigné.
+        if (!motDePasse.isBlank()) {
+            utilisateur.setMotDePasse(passwordEncoder.encode(motDePasse));
+        }
+
+        utilisateurRepository.save(utilisateur);
+    }
 }

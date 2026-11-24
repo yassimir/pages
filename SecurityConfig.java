@@ -19,11 +19,14 @@ public class SecurityConfig {
 
     private final CustomSessionRegistry sessionRegistry;
     private final PaymentNotificationSuccessHandler paymentNotificationSuccessHandler;
+    private final CustomAuthenticationFailureHandler authenticationFailureHandler;
 
     public SecurityConfig(CustomSessionRegistry sessionRegistry,
-                          PaymentNotificationSuccessHandler paymentNotificationSuccessHandler) {
+                          PaymentNotificationSuccessHandler paymentNotificationSuccessHandler,
+                          CustomAuthenticationFailureHandler authenticationFailureHandler) {
         this.sessionRegistry = sessionRegistry;
         this.paymentNotificationSuccessHandler = paymentNotificationSuccessHandler;
+        this.authenticationFailureHandler = authenticationFailureHandler;
     }
 
     @Bean
@@ -61,6 +64,7 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .successHandler(paymentNotificationSuccessHandler)
+                        .failureHandler(authenticationFailureHandler)
                         .permitAll()
                 )
                 .logout(logout -> logout

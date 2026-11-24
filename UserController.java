@@ -82,4 +82,42 @@ public class UserController {
 
         return "redirect:/users";
     }
+
+    @PostMapping("/edit")
+    public String modifierUtilisateur(
+            @RequestParam Long id,
+            @RequestParam String username,
+            @RequestParam(required = false) String email,
+            @RequestParam(required = false) String password,
+            @RequestParam String role,
+            @RequestParam boolean actif,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            Role roleUtilisateur = Role.valueOf(role);
+
+            servUtilisateur.modifierUtilisateur(
+                    id,
+                    username,
+                    email,
+                    password,
+                    roleUtilisateur,
+                    actif
+            );
+
+            redirectAttributes.addFlashAttribute(
+                    "success",
+                    "Utilisateur modifié avec succès."
+            );
+
+        } catch (IllegalArgumentException e) {
+
+            redirectAttributes.addFlashAttribute(
+                    "error",
+                    e.getMessage()
+            );
+        }
+
+        return "redirect:/users";
+    }
 }
