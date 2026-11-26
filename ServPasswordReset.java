@@ -21,6 +21,13 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
 @Service
 public class ServPasswordReset {
 
@@ -30,6 +37,9 @@ public class ServPasswordReset {
     private final PasswordEncoder passwordEncoder;
 
     private final SecureRandom secureRandom = new SecureRandom();
+
+    private final Map<String, List<LocalDateTime>> demandesParEmail =
+            new HashMap<>();
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -53,7 +63,13 @@ public class ServPasswordReset {
             return;
         }
 
-        utilisateurRepository.findByEmail(email.trim())
+        String emailNormalise = email.trim().toLowerCase(Locale.ROOT);
+
+        if (!autoriserDemande(emailNormalise)) {
+            return;
+        }
+
+        utilisateurRepository.findByEmail(emailNormalise)
                 .filter(Utilisateur::isActif)
                 .filter(u -> u.getEmail() != null && !u.getEmail().isBlank())
                 .ifPresent(utilisateur -> {
@@ -131,6 +147,44 @@ public class ServPasswordReset {
         utilisateur.setMotDePasse(passwordEncoder.encode(nouveauMotDePasse));
 
         resetToken.setUsed(true);
+
+        return true;
+    }
+
+    private synchronized boolean autoriserDemande(String email) {
+
+        LocalDateTime maintenant = LocalDateTime.now();
+        LocalDateTime limite = maintenant.minusMinutes(15);
+
+        // Supprimer les anciennes demandes
+        Iterator<Map.Entry<String, List<LocalDateTime>>> iterator =
+                demandesParEmail.entrySet().iterator();
+
+        while (iterator.hasNext()) {
+
+            Map.Entry<String, List<LocalDateTime>> entry =
+                    iterator.next();
+
+            entry.getValue().removeIf(date -> !date.isAfter(limite));
+
+            if (entry.getValue().isEmpty()) {
+                iterator.remove();
+            }
+        }
+
+        // Récupérer les demandes de cette adresse
+        List<LocalDateTime> demandes =
+                demandesParEmail.computeIfAbsent(
+                        email,
+                        k -> new ArrayList<>()
+                );
+
+        // Maximum 3 demandes en 15 minutes
+        if (demandes.size() >= 3) {
+            return false;
+        }
+
+        demandes.add(maintenant);
 
         return true;
     }
