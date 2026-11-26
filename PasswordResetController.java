@@ -30,12 +30,39 @@ public class PasswordResetController {
             @RequestParam("email") String email,
             RedirectAttributes redirectAttributes) {
 
-        servPasswordReset.demanderReinitialisation(email);
+        long secondesRestantes =
+                servPasswordReset.demanderReinitialisation(email);
 
-        redirectAttributes.addFlashAttribute(
-                "message",
-                "Si cette adresse correspond à un compte, un lien de réinitialisation vient d'être envoyé."
-        );
+        if (secondesRestantes > 0) {
+
+            long minutes = secondesRestantes / 60;
+            long secondes = secondesRestantes % 60;
+
+            String delai;
+
+            if (minutes > 0) {
+                delai = minutes + " minute(s) et " + secondes + " seconde(s)";
+            } else {
+                delai = secondes + " seconde(s)";
+            }
+
+            redirectAttributes.addFlashAttribute(
+                    "message",
+                    "Vous avez atteint le nombre maximum de demandes de réinitialisation. "
+                            + "Veuillez réessayer dans " + delai + "."
+            );
+
+            redirectAttributes.addFlashAttribute("demandeBloquee", true);
+
+        } else {
+
+            redirectAttributes.addFlashAttribute(
+                    "message",
+                    "Si cette adresse correspond à un compte, un lien de réinitialisation vient d'être envoyé."
+            );
+
+            redirectAttributes.addFlashAttribute("demandeBloquee", false);
+        }
 
         return "redirect:/forgot-password";
     }

@@ -252,7 +252,7 @@ public class ServPasswordReset {
         }
 
         PasswordResetToken resetToken = tokenRepository
-                .findByTokenHash(hashToken(token))
+                .findByTokenHashForUpdate(hashToken(token))
                 .filter(t -> !t.isUsed())
                 .filter(t -> t.getExpiresAt().isAfter(LocalDateTime.now()))
                 .orElse(null);
@@ -262,6 +262,9 @@ public class ServPasswordReset {
         }
 
         Utilisateur utilisateur = resetToken.getUtilisateur();
+        if (!utilisateur.isActif()) {
+            return false;
+        }
         utilisateur.setMotDePasse(passwordEncoder.encode(nouveauMotDePasse));
 
         resetToken.setUsed(true);
