@@ -20,13 +20,12 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.HexFormat;
+import java.time.Duration;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
+
 import java.util.Locale;
-import java.util.Map;
+import com.gharnata.entity.PasswordResetAttempt;
+import com.gharnata.repository.RepPasswordResetAttempt;
 
 @Service
 public class ServPasswordReset {
@@ -35,11 +34,12 @@ public class ServPasswordReset {
     private final RepPasswordResetToken tokenRepository;
     private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
+    private final RepPasswordResetAttempt attemptRepository;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
-    private final Map<String, List<LocalDateTime>> demandesParEmail =
-            new HashMap<>();
+    /*private final Map<String, List<LocalDateTime>> demandesParEmail =
+            new HashMap<>();*/
 
     @Value("${app.base-url}")
     private String baseUrl;
@@ -48,15 +48,19 @@ public class ServPasswordReset {
             UtilisateurRepository utilisateurRepository,
             RepPasswordResetToken tokenRepository,
             JavaMailSender mailSender,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            RepPasswordResetAttempt attemptRepository) {
 
         this.utilisateurRepository = utilisateurRepository;
         this.tokenRepository = tokenRepository;
         this.mailSender = mailSender;
         this.passwordEncoder = passwordEncoder;
+        this.attemptRepository = attemptRepository;
     }
 
-    @Transactional
+
+
+    /*@Transactional
     public void demanderReinitialisation(String email) {
 
         if (email == null || email.isBlank()) {
@@ -65,10 +69,29 @@ public class ServPasswordReset {
 
         String emailNormalise = email.trim().toLowerCase(Locale.ROOT);
 
-        if (!autoriserDemande(emailNormalise)) {
+        LocalDateTime maintenant = LocalDateTime.now();
+        LocalDateTime limite = maintenant.minusMinutes(15);
+
+        // Vérifier le nombre de demandes durant les 15 dernières minutes
+        long nombreDemandes =
+                attemptRepository.countByEmailAndRequestedAtAfter(
+                        emailNormalise,
+                        limite
+                );
+
+        // Maximum 3 demandes en 15 minutes
+        if (nombreDemandes >= 3) {
             return;
         }
 
+        // Enregistrer la demande dans la base de données
+        PasswordResetAttempt attempt = new PasswordResetAttempt();
+        attempt.setEmail(emailNormalise);
+        attempt.setRequestedAt(maintenant);
+
+        attemptRepository.save(attempt);
+
+        // Rechercher le compte correspondant à l'adresse email
         utilisateurRepository.findByEmail(emailNormalise)
                 .filter(Utilisateur::isActif)
                 .filter(u -> u.getEmail() != null && !u.getEmail().isBlank())
@@ -108,6 +131,101 @@ public class ServPasswordReset {
 
                     mailSender.send(message);
                 });
+    }*/
+
+    @Transactional
+    public long demanderReinitialisation(String email) {
+
+        if (email == null || email.isBlank()) {
+            return 0;
+        }
+
+        String emailNormalise = email.trim().toLowerCase(Locale.ROOT);
+
+        LocalDateTime maintenant = LocalDateTime.now();
+        LocalDateTime limite = maintenant.minusMinutes(15);
+
+        // Compter les demandes durant les 15 dernières minutes
+        long nombreDemandes =
+                attemptRepository.countByEmailAndRequestedAtAfter(
+                        emailNormalise,
+                        limite
+                );
+
+        // Maximum 3 demandes en 15 minutes
+        if (nombreDemandes >= 3) {
+
+            PasswordResetAttempt premiereDemande =
+                    attemptRepository
+                            .findFirstByEmailAndRequestedAtAfterOrderByRequestedAtAsc(
+                                    emailNormalise,
+                                    limite
+                            )
+                            .orElse(null);
+
+            if (premiereDemande == null) {
+                return 0;
+            }
+
+            LocalDateTime prochaineTentative =
+                    premiereDemande.getRequestedAt().plusMinutes(15);
+
+            long millisecondesRestantes =
+                    Duration.between(maintenant, prochaineTentative)
+                            .toMillis();
+
+            return Math.max(1, (millisecondesRestantes + 999) / 1000);
+        }
+
+        // Enregistrer la demande dans la base de données
+        PasswordResetAttempt attempt = new PasswordResetAttempt();
+        attempt.setEmail(emailNormalise);
+        attempt.setRequestedAt(maintenant);
+
+        attemptRepository.save(attempt);
+
+        // Rechercher le compte correspondant à l'adresse email
+        utilisateurRepository.findByEmail(emailNormalise)
+                .filter(Utilisateur::isActif)
+                .filter(u -> u.getEmail() != null && !u.getEmail().isBlank())
+                .ifPresent(utilisateur -> {
+
+                    tokenRepository.deleteByUtilisateur_Id(utilisateur.getId());
+
+                    byte[] randomBytes = new byte[32];
+                    secureRandom.nextBytes(randomBytes);
+
+                    String token = Base64.getUrlEncoder()
+                            .withoutPadding()
+                            .encodeToString(randomBytes);
+
+                    PasswordResetToken resetToken = new PasswordResetToken();
+                    resetToken.setTokenHash(hashToken(token));
+                    resetToken.setUtilisateur(utilisateur);
+                    resetToken.setExpiresAt(LocalDateTime.now().plusMinutes(30));
+                    resetToken.setUsed(false);
+
+                    tokenRepository.save(resetToken);
+
+                    String lien = baseUrl
+                            + "/reset-password?token=" + token;
+
+                    SimpleMailMessage message = new SimpleMailMessage();
+                    message.setTo(utilisateur.getEmail());
+                    message.setSubject("Réinitialisation de votre mot de passe");
+                    message.setText(
+                            "Bonjour " + utilisateur.getUsername() + ",\n\n"
+                                    + "Vous avez demandé la réinitialisation de votre mot de passe.\n\n"
+                                    + "Cliquez sur le lien suivant pour choisir un nouveau mot de passe :\n"
+                                    + lien + "\n\n"
+                                    + "Ce lien expire dans 30 minutes et ne peut être utilisé qu'une seule fois.\n\n"
+                                    + "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email."
+                    );
+
+                    mailSender.send(message);
+                });
+
+        return 0;
     }
 
     public boolean verifierToken(String token) {
@@ -151,7 +269,7 @@ public class ServPasswordReset {
         return true;
     }
 
-    private synchronized boolean autoriserDemande(String email) {
+    /*private synchronized boolean autoriserDemande(String email) {
 
         LocalDateTime maintenant = LocalDateTime.now();
         LocalDateTime limite = maintenant.minusMinutes(15);
@@ -187,7 +305,7 @@ public class ServPasswordReset {
         demandes.add(maintenant);
 
         return true;
-    }
+    }*/
 
     private String hashToken(String token) {
 
@@ -214,5 +332,9 @@ public class ServPasswordReset {
         tokenRepository.deleteByExpiresAtBefore(LocalDateTime.now());
 
         tokenRepository.deleteByUsedTrue();
+
+        attemptRepository.deleteByRequestedAtBefore(
+                LocalDateTime.now().minusDays(30)
+        );
     }
 }
