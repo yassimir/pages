@@ -3,6 +3,7 @@ package com.gharnata.service;
 
 import com.gharnata.entity.PasswordResetToken;
 import com.gharnata.entity.Utilisateur;
+import com.gharnata.enums.ResultatReinitialisation;
 import com.gharnata.repository.RepPasswordResetToken;
 import com.gharnata.repository.UtilisateurRepository;
 import org.springframework.transaction.annotation.Transactional;
@@ -241,6 +242,42 @@ public class ServPasswordReset {
     }
 
     @Transactional
+    public ResultatReinitialisation reinitialiserMotDePasse(
+            String token,
+            String nouveauMotDePasse) {
+
+        if (token == null || token.isBlank()
+                || nouveauMotDePasse == null
+                || nouveauMotDePasse.length() < 8) {
+            return ResultatReinitialisation.TOKEN_INVALIDE;
+        }
+
+        PasswordResetToken resetToken = tokenRepository
+                .findByTokenHashForUpdate(hashToken(token))
+                .filter(t -> !t.isUsed())
+                .filter(t -> t.getExpiresAt().isAfter(LocalDateTime.now()))
+                .orElse(null);
+
+        if (resetToken == null) {
+            return ResultatReinitialisation.TOKEN_INVALIDE;
+        }
+
+        Utilisateur utilisateur = resetToken.getUtilisateur();
+
+        if (!utilisateur.isActif()) {
+            return ResultatReinitialisation.COMPTE_DESACTIVE;
+        }
+
+        utilisateur.setMotDePasse(
+                passwordEncoder.encode(nouveauMotDePasse)
+        );
+
+        resetToken.setUsed(true);
+
+        return ResultatReinitialisation.SUCCES;
+    }
+
+    /*@Transactional
     public boolean reinitialiserMotDePasse(
             String token,
             String nouveauMotDePasse) {
@@ -270,7 +307,7 @@ public class ServPasswordReset {
         resetToken.setUsed(true);
 
         return true;
-    }
+    }*/
 
     /*private synchronized boolean autoriserDemande(String email) {
 
