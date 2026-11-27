@@ -12,6 +12,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.gharnata.config.CustomSessionRegistry;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -41,6 +42,7 @@ public class ServPasswordReset {
     private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
     private final RepPasswordResetAttempt attemptRepository;
+    private final CustomSessionRegistry sessionRegistry;
 
     private final SecureRandom secureRandom = new SecureRandom();
 
@@ -51,17 +53,16 @@ public class ServPasswordReset {
     private String baseUrl;
 
     public ServPasswordReset(
-            UtilisateurRepository utilisateurRepository,
-            RepPasswordResetToken tokenRepository,
-            JavaMailSender mailSender,
-            PasswordEncoder passwordEncoder,
-            RepPasswordResetAttempt attemptRepository) {
+            UtilisateurRepository utilisateurRepository, RepPasswordResetToken tokenRepository,
+            JavaMailSender mailSender, PasswordEncoder passwordEncoder,
+            RepPasswordResetAttempt attemptRepository, CustomSessionRegistry sessionRegistry) {
 
         this.utilisateurRepository = utilisateurRepository;
         this.tokenRepository = tokenRepository;
         this.mailSender = mailSender;
         this.passwordEncoder = passwordEncoder;
         this.attemptRepository = attemptRepository;
+        this.sessionRegistry = sessionRegistry;
     }
 
 
@@ -379,6 +380,11 @@ public class ServPasswordReset {
 
         utilisateur.setMotDePasse(
                 passwordEncoder.encode(nouveauMotDePasse)
+        );
+
+        // Invalider toutes les sessions de cet utilisateur.
+        sessionRegistry.invaliderSessionsUtilisateur(
+                utilisateur.getUsername()
         );
 
         resetToken.setUsed(true);
