@@ -23,6 +23,11 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.time.Duration;
 
+import jakarta.mail.internet.MimeMessage;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.web.util.HtmlUtils;
+
 
 import java.util.Locale;
 import com.gharnata.entity.PasswordResetAttempt;
@@ -211,19 +216,123 @@ public class ServPasswordReset {
                     String lien = baseUrl
                             + "/reset-password?token=" + token;
 
-                    SimpleMailMessage message = new SimpleMailMessage();
-                    message.setTo(utilisateur.getEmail());
-                    message.setSubject("Réinitialisation de votre mot de passe");
-                    message.setText(
-                            "Bonjour " + utilisateur.getUsername() + ",\n\n"
-                                    + "Vous avez demandé la réinitialisation de votre mot de passe.\n\n"
-                                    + "Cliquez sur le lien suivant pour choisir un nouveau mot de passe :\n"
-                                    + lien + "\n\n"
-                                    + "Ce lien expire dans 30 minutes et ne peut être utilisé qu'une seule fois.\n\n"
-                                    + "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email."
-                    );
+                    try {
+                        MimeMessage message = mailSender.createMimeMessage();
 
-                    mailSender.send(message);
+                        MimeMessageHelper helper = new MimeMessageHelper(
+                                message,
+                                true,
+                                StandardCharsets.UTF_8.name()
+                        );
+
+                        String nomUtilisateur = HtmlUtils.htmlEscape(
+                                utilisateur.getUsername()
+                        );
+
+                        String texte = "Bonjour " + utilisateur.getUsername() + ",\n\n"
+                                + "Vous avez demandé la réinitialisation de votre mot de passe.\n\n"
+                                + "Voici votre lien de réinitialisation :\n"
+                                + lien + "\n\n"
+                                + "Ce lien expire dans 30 minutes et ne peut être utilisé qu'une seule fois.\n\n"
+                                + "Si vous n'êtes pas à l'origine de cette demande, ignorez cet email.";
+
+
+                        String html = """
+                            <!DOCTYPE html>
+                            <html lang="fr">
+                            <head>
+                                <meta charset="UTF-8">
+                            </head>
+                            <body style="margin:0; padding:30px 10px; background-color:#ffffff;
+                                         font-family:Arial,Helvetica,sans-serif;">
+                    
+                                <div style="max-width:560px; margin:auto; background:#d1d5db;
+                                            border-radius:12px; overflow:hidden;
+                                            border:4px solid #17283d;">
+                    
+                                    <div style="text-align:center; padding:30px 20px;
+                                                background:#d1d5db;">
+                                        <img src="cid:logoGharnata"
+                                             alt="Gharnata Stock"
+                                             style="max-width:90px; height:auto;">
+                                    </div>
+                    
+                                    <div style="padding:10px 35px 35px; color:#374151;">
+                    
+                                        <h2 style="text-align:center; color:#24364b;
+                                                   margin-bottom:25px;">
+                                            Réinitialisation du mot de passe
+                                        </h2>
+                    
+                                        <p>Bonjour %s,</p>
+                    
+                                        <p>
+                                            Nous avons reçu une demande de réinitialisation
+                                            du mot de passe de votre compte Gharnata Stock.
+                                        </p>
+                    
+                                        <p style="text-align:center; margin:35px 0;">
+                                            <a href="%s"
+                                               style="display:inline-block; padding:15px 28px;
+                                                      background:#24364b; color:#ffffff;
+                                                      text-decoration:none; font-weight:bold;
+                                                      border-radius:7px;">
+                                                Réinitialiser mon mot de passe
+                                            </a>
+                                        </p>
+                    
+                                        <p style="font-size:14px; color:#374151;">
+                                            Ce lien est valable pendant <strong>30 minutes</strong>
+                                            et ne peut être utilisé qu'une seule fois.
+                                        </p>
+                    
+                                        <p style="font-size:13px; color:#4b5563;">
+                                            Si le bouton ne fonctionne pas, copiez ce lien
+                                            dans votre navigateur :
+                                        </p>
+                    
+                                        <p style="font-size:12px; word-break:break-all; color:#24364b;">
+                                            %s
+                                        </p>
+                    
+                                        <p style="margin-top:30px;">
+                                            Si vous n'êtes pas à l'origine de cette demande,
+                                            vous pouvez simplement ignorer cet email.
+                                        </p>
+                    
+                                    </div>
+                    
+                                    <div style="padding:20px; text-align:center;
+                                                background:#c5cbd3; color:#4b5563;
+                                                font-size:12px;">
+                                        Gharnata Stock<br>
+                                        Email automatique — Merci de ne pas répondre.
+                                    </div>
+                    
+                                </div>
+                            </body>
+                            </html>
+                            """.formatted(nomUtilisateur, lien, lien);
+
+
+
+                        helper.setTo(utilisateur.getEmail());
+                        helper.setSubject("Réinitialisation de votre mot de passe");
+                        helper.setText(texte, html);
+
+                        helper.addInline(
+                                "logoGharnata",
+                                new ClassPathResource("/static/assets/images/logo/logo_icon_email.png"),
+                                "image/png"
+                        );
+
+                        mailSender.send(message);
+
+                    } catch (Exception e) {
+                        throw new IllegalStateException(
+                                "Impossible d'envoyer l'email de réinitialisation.", e
+                        );
+                    }
                 });
 
         return 0;

@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import com.gharnata.enums.ResultatReinitialisation;
 
 @Controller
 public class PasswordResetController {
@@ -113,12 +114,24 @@ public class PasswordResetController {
             return "auth/resetPassword";
         }
 
-        boolean succes = servPasswordReset.reinitialiserMotDePasse(
-                token,
-                nouveauMotDePasse
-        );
+        ResultatReinitialisation resultat =
+                servPasswordReset.reinitialiserMotDePasse(
+                        token,
+                        nouveauMotDePasse
+                );
 
-        if (!succes) {
+        if (resultat == ResultatReinitialisation.COMPTE_DESACTIVE) {
+
+            model.addAttribute("tokenValide", false);
+            model.addAttribute("token", token);
+            model.addAttribute("erreur",
+                    "Votre compte est désactivé. Veuillez contacter l'administrateur.");
+
+            return "auth/resetPassword";
+        }
+
+        if (resultat == ResultatReinitialisation.TOKEN_INVALIDE) {
+
             model.addAttribute("tokenValide", false);
             model.addAttribute("token", token);
             model.addAttribute("erreur",

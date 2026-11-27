@@ -46,7 +46,11 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(new CsrfTokenRequestAttributeHandler())
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/resources/**", "/assets/**", "/images/**", "/icons/**", "/login", "/service-worker.js", "/manifest.json").permitAll()
+                        .requestMatchers("/resources/**", "/assets/**",
+                                        "/images/**", "/icons/**",
+                                        "/login", "/service-worker.js",
+                                        "/manifest.json", "/forgot-password",
+                                        "/reset-password").permitAll()
                         .requestMatchers("/users/**").hasRole("ADMIN")
                         .requestMatchers("/settings/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/payments/*/confirm").hasRole("ADMIN")
